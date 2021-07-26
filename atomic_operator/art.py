@@ -7,7 +7,11 @@ from .execution.localrunner import LocalRunner
 
 
 class AtomicOperator(Base):
+
     """Main class used to run Atomic Red Team tests.
+
+    atomic-operator is used to run Atomic Red Team tests both locally and remotely.
+    These tests (atomics) are predefined tests to mock or emulate a specific technique.
 
     Raises:
         ValueError: If a provided technique is unknown we raise an error.
@@ -30,7 +34,7 @@ class AtomicOperator(Base):
 
     def run(
         self, 
-        technique: str='All', 
+        techniques: list=['All'], 
         atomics_path=os.getcwd(), 
         check_dependencies=False, 
         get_prereqs=False, 
@@ -42,7 +46,7 @@ class AtomicOperator(Base):
         """The main method in which we run Atomic Red Team tests.
 
         Args:
-            technique (str, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
+            techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
@@ -55,6 +59,8 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
+        if not isinstance(techniques, list):
+            techniques = [t.strip() for t in techniques.split(',')]
         Base.CONFIG = Config(
             atomics_path          = atomics_path,
             check_dependencies    = check_dependencies,
@@ -66,14 +72,15 @@ class AtomicOperator(Base):
         )
         self.__techniques = Loader().load_techniques()
         iteration = 0
-        if technique != 'All':
-            if self.__techniques.get(technique):
-                iteration += 1
-                self.__run_test(self.__techniques[technique], **kwargs)
-                pass
-            else:
-                raise ValueError(f"Unable to find technique {technique}")
-        elif technique == 'All':
+        if 'All' not in techniques:
+            for technique in techniques:
+                if self.__techniques.get(technique):
+                    iteration += 1
+                    self.__run_test(self.__techniques[technique], **kwargs.get('kwargs'))
+                    pass
+                else:
+                    raise ValueError(f"Unable to find technique {technique}")
+        elif 'All' in techniques:
             # process all techniques
             for key,val in self.__techniques.items():
                 self.__run_test(val)
