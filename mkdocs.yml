@@ -1,0 +1,13 @@
+site_name: atomic-operator
+site_description: This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
+nav:
+    - Home: 'index.md'
+    - Documentation:
+        - 'Get Atomics': 'atomics.md'
+        - 'Atomic Operator': 'atomic-operator.md'
+        - 'Running Tests on Command Line': 'running-tests-command-line.md'
+        - 'Running Tests via Scripts': 'running-tests-script.md'
+    - About:
+        - 'License': 'LICENSE.md'
+        - 'Contributing': 'CONTRIBUTING.md'
+        - 'Changelog': 'CHANGELOG.md'
