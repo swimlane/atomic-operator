@@ -29,7 +29,7 @@ pip install atomic-operator
 ### Installing from source
 
 ```bash
-git clone https://github.com/msadministrator/atomic-operator.git
+git clone https://github.com/swimlane/atomic-operator.git
 cd atomic-operator
 python setup.py install
 ```
@@ -135,7 +135,7 @@ We use [SemVer](http://semver.org/) for versioning.
 
 * Josh Rickard - *Initial work* - [MSAdministrator](https://github.com/MSAdministrator)
 
-See also the list of [contributors](https://github.com/Swimlane/atomic-operator/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/swimlane/atomic-operator/contributors) who participated in this project.
 
 ## License
 
