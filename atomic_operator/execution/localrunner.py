@@ -18,10 +18,10 @@ class LocalRunner(Base):
         """Checking if executor works with local system platform
         """
         __executor = None
-        for executor in self.test.executor:
-            self.show_details(f"Checking if executor works on local system platform.")
-            if self.__local_system_platform in self.test.supported_platforms:
-                __executor = self.command_map.get(executor.name).get(self.__local_system_platform)
+        self.show_details(f"Checking if executor works on local system platform.")
+        if self.__local_system_platform in self.test.supported_platforms:
+            if self.test.executor.name != 'manual':
+                __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
     def __run_dependencies(self, executor):
@@ -41,13 +41,11 @@ class LocalRunner(Base):
         """
         executor = self.__get_executor_command()
         self.show_details(f"Using {executor} as executor.")
-        pass
         if executor:
             if Base.CONFIG.check_dependencies and self.test.dependencies:
                 self.__run_dependencies(executor)
-            for test in self.test.executor:
-                self.show_details("Running command")
-                self.execute_subprocess(executor, test.command)
-                if Base.CONFIG.cleanup and test.cleanup_command:
-                    self.show_details("Running cleanup command")
-                    self.execute_subprocess(executor, test.cleanup_command)
+            self.show_details("Running command")
+            self.execute_subprocess(executor, self.test.executor.command)
+            if Base.CONFIG.cleanup and self.test.executor.cleanup_command:
+                self.show_details("Running cleanup command")
+                self.execute_subprocess(executor, self.test.executor.cleanup_command)
