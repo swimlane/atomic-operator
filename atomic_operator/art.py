@@ -1,5 +1,4 @@
 import os
-import sys
 from .base import Base
 from .config import Config
 from .atomic.loader import Loader
