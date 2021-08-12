@@ -18,7 +18,6 @@ The following libraries are required and installed by atomic-operator:
 ```
 pyyaml==5.4.1
 fire==0.3.1
-unidecode==1.2.0
 ```
 
 ### macOS, Linux and Windows:
