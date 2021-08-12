@@ -3,7 +3,6 @@ import typing
 import attr
 
 from ..base import Base
-from ..config import Config
 
 
 @attr.s
