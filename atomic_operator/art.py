@@ -81,7 +81,10 @@ class AtomicOperator(Base):
             for technique in techniques:
                 if self.__techniques.get(technique):
                     iteration += 1
-                    self.__run_test(self.__techniques[technique], **kwargs.get('kwargs'))
+                    if kwargs:
+                        self.__run_test(self.__techniques[technique], **kwargs.get('kwargs'))
+                    else:
+                        self.__run_test(self.__techniques[technique])
                     pass
                 else:
                     raise ValueError(f"Unable to find technique {technique}")
