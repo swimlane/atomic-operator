@@ -6,6 +6,7 @@ This python package is used to execute Atomic Red Team tests (Atomics) across mu
 
 * Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
 * Can prompt for input arguments but not required
+* Assist with downloading the atomic-red-team repository
 
 ## Installation
 
@@ -50,7 +51,7 @@ In order to run a test you must provide some additional properties (and options 
 atomic-operator run --atomics-path "~/atomic-red-team-master"
 ```
 
-### Additionall paramters
+### Additional parameters
 
 You can see additional parameters by running the following command:
 
