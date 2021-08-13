@@ -1,7 +1,10 @@
 import os
 import sys
+import zipfile
+from io import BytesIO
 import platform
 import subprocess
+import requests
 from .config import Config
 from .utils.logger import LoggingBase
 
@@ -9,6 +12,7 @@ from .utils.logger import LoggingBase
 class Base(metaclass=LoggingBase):
 
     CONFIG = None
+    ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
     command_map = {
         'command_prompt': {
             'windows': 'C:\\Windows\\System32\\cmd.exe',
@@ -28,6 +32,12 @@ class Base(metaclass=LoggingBase):
             'macos': '/bin/bash'
         }
     }
+
+    def download_atomic_red_team_repo(self, save_path):
+        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True)
+        z = zipfile.ZipFile(BytesIO(response.content))
+        z.extractall(save_path)
+        return z.namelist()[0]
 
     def get_local_system_platform(self):
         os_name = platform.system().lower()

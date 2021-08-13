@@ -31,6 +31,12 @@ class AtomicOperator(Base):
                 self.show_details(f"Description: {test.description}")
                 LocalRunner(test).run()
 
+    def get_atomics(self, desintation=os.getcwd()):
+        if not os.path.exists(desintation):
+            os.makedirs(desintation)
+        folder_name = self.download_atomic_red_team_repo(desintation)
+        return os.path.join(desintation, folder_name)
+
     def run(
         self, 
         techniques: list=['All'], 
