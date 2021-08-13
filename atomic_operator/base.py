@@ -87,14 +87,24 @@ Inputs for {title}:
             print()
 
     def execute_subprocess(self, executor, command, cwd):
-        p = subprocess.Popen(executor, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT, env=os.environ, cwd=cwd)
+        p = subprocess.Popen(
+            executor, 
+            shell=False, 
+            stdin=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, 
+            env=os.environ, 
+            cwd=cwd
+        )
         try:
-
-            outs, errs = p.communicate(bytes(command, "utf-8") + b"\n", timeout=Config.command_timeout)
+            outs, errs = p.communicate(
+                bytes(command, "utf-8") + b"\n", 
+                timeout=Base.CONFIG.command_timeout
+            )
+            if p.returncode != 0:
+                self.__logger.warning(f"Command: {command} returned exit code {p.returncode}: {outs}")
             return outs, errs
         except subprocess.TimeoutExpired as e:
-
             # Display output if it exists.
             if e.output:
                 print(e.output)

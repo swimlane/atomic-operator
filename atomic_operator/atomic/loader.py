@@ -51,6 +51,6 @@ class Loader(Base):
             technique = self.__get_file_name(atomic_entry)
             if not self.__techniques.get(technique):
                 loaded_technique = self.load_technique(atomic_entry)
-                loaded_technique.update({'path': atomic_entry})
+                loaded_technique.update({'path': os.path.dirname(atomic_entry)})
                 self.__techniques[technique] = Atomic(**loaded_technique)
         return self.__techniques
