@@ -29,7 +29,7 @@ class AtomicOperator(Base):
                 test.set_command_inputs(**args_dict)
                 self.__logger.info(f"Running {test.name} test")
                 self.show_details(f"Description: {test.description}")
-                LocalRunner(test).run()
+                LocalRunner(test, technique.path).run()
 
     def get_atomics(self, desintation=os.getcwd()):
         if not os.path.exists(desintation):

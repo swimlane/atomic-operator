@@ -5,13 +5,15 @@ class LocalRunner(Base):
     """Runs AtomicTest objects locally
     """
 
-    def __init__(self, atomic_test):
+    def __init__(self, atomic_test, test_path):
         """A single AtomicTest object is provided and ran on the local system
 
         Args:
             atomic_test (AtomicTest): A single AtomicTest object.
+            test_path (Atomic): A path where the AtomicTest object resides
         """
         self.test = atomic_test
+        self.test_path = test_path
         self.__local_system_platform = self.get_local_system_platform()
 
     def __get_executor_command(self):
@@ -34,7 +36,7 @@ class LocalRunner(Base):
             if Base.CONFIG.get_prereqs:
                 self.show_details(f"Retrieving prerequistes")
                 self.execute_subprocess(executor, dependency.get_prereq_command)
-            self.execute_subprocess(executor, dependency.prereq_command)
+            self.execute_subprocess(executor, dependency.prereq_command, self.test_path)
 
     def run(self):
         """The main method which runs a single AtomicTest object.
@@ -45,7 +47,7 @@ class LocalRunner(Base):
             if Base.CONFIG.check_dependencies and self.test.dependencies:
                 self.__run_dependencies(executor)
             self.show_details("Running command")
-            self.execute_subprocess(executor, self.test.executor.command)
+            self.execute_subprocess(executor, self.test.executor.command, self.test_path)
             if Base.CONFIG.cleanup and self.test.executor.cleanup_command:
                 self.show_details("Running cleanup command")
-                self.execute_subprocess(executor, self.test.executor.cleanup_command)
+                self.execute_subprocess(executor, self.test.executor.cleanup_command, self.test_path)
