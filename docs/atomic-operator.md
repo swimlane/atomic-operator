@@ -10,7 +10,26 @@ You can access the general help for `atomic-operator` by simplying typing the fo
 atomic-operator
 ```
 
-There is currently only one command you can use. That is the `run` command. The `run` command has several mandatory and optional parameters that can be used.  You can see these by running the help for this command:
+### Retrieving Atomic Tests
+
+In order to use `atomic-operator` you must have one or more [atomic-red-team](https://github.com/redcanaryco/atomic-red-team) tests (Atomics) on your local system. `atomic-operator` provides you with the ability to download the Atomic Red Team repository. You can do so by running the following at the command line:
+
+```bash
+atomic-operator get_atomics 
+# You can specify the destination directory by using the --destination flag
+atomic-operator get_atomics --destination "/tmp/some_directory"
+```
+
+### Running Tests
+
+In order to run a test you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
+
+```bash
+# This will run ALL tests compatiable with your local operating system
+atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624"
+```
+
+The `run` command has several mandatory and optional parameters that can be used.  You can see these by running the help for this command:
 
 ```bash
 atomic-operator run -- --help
@@ -56,7 +75,22 @@ In additional to using `atomic-operator` on the command line you can import it i
 ```python
 from atomic_operator import AtomicOperator
 
-atomic_operator = AtomicOperator()
+operator = AtomicOperator()
 
-print(atomic_operator.run())
+# This will download a local copy of the atomic-red-team repository
+
+print(operator.get_atomics('/tmp/some_directory'))
+
+# this will run tests on your local system
+operator.run(
+    technique: str='All', 
+    atomics_path=os.getcwd(), 
+    check_dependencies=False, 
+    get_prereqs=False, 
+    cleanup=False, 
+    command_timeout=20, 
+    show_details=False,
+    prompt_for_input_args=False,
+    **kwargs
+)
 ```

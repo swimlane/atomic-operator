@@ -1,17 +1,33 @@
 # atomic-operator
 
-Current Version: v0.0.1 ([What's new?](release-notes.md)).
+![](atomic-operator-logo.svg)
 
-`atomic-operator` is a Python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
+This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-The main goal of `atomic-operator` is to assist with testing your security defenses using defined `Atomics`.
+> Current Version: v0.0.1 ([What's new?](release-notes.md))
+
+## Why?
+
+`atomic-operator` enables security professionals to test their detection and defensive capabilities against prescribed techniques defined within [atomic-red-team](https://github.com/redcanaryco/atomic-red-team). By utilizing a testing framework such as `atomic-operator`, you can identify both your defensive capabilities as well as gaps in defensive coverage.
+
+Additionally, `atomic-operator` can be used in many other situations like:
+
+- Generating alerts to test products
+- Testing EDR and other security tools
+- Identifying way to perform defensive evasion from an adversary perspective
+- Plus more.
+
+## Features
+
+* Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
+* Can prompt for input arguments but not required
+* Assist with downloading the atomic-red-team repository
 
 ## Getting Started
 
-`atomic-operator` is a Python-only package hosted on [PyPi]() and works with Python 3.6 and greater.
+`atomic-operator` is a Python-only package hosted on [PyPi](https://pypi.org/project/atomic-operator/) and works with Python 3.6 and greater.
 
 If you are wanting a PowerShell version, please checkout [Invoke-AtomicRedTeam](https://github.com/redcanaryco/invoke-atomicredteam).
-
 
 ```bash
 pip install atomic-operator
@@ -23,11 +39,152 @@ The next steps will guide you through setting up and running `atomic-operator`.
 * [atomic-operator](atomic-operator.md) Understand the options availble in atomic-operator
 * [Running Test on Command Line](running-tests-command-line.md) or [Running Tests within a Script](running-tests-script.md)
 
-## Why?
+## Installation
 
-`atomic-operator` was built to assist organizations and security professionals with testing their defenses against MITRE ATT&CK Techniques defined by Atomic Red Team. These techniques are common TTPs used by malicious actors and thus `atomic-operator` helps organizations assess their defensive capabilities against these TTPs.
+You can install **atomic-operator** on OS X, Linux, or Windows. You can also install it directly from the source. To install, see the commands under the relevant operating system heading, below.
 
+### Prerequisites
+
+The following libraries are required and installed by atomic-operator:
+
+```
+pyyaml==5.4.1
+fire==0.3.1
+requests==2.26.0
+attrs==21.2.0
+```
+
+### macOS, Linux and Windows:
+
+```bash
+pip install atomic-operator
+```
+
+### Installing from source
+
+```bash
+git clone https://github.com/swimlane/atomic-operator.git
+cd atomic-operator
+python setup.py install
+```
+
+## Usage example (command line)
+
+You can run `atomic-operator` from the command line or within your own Python scripts. To use `atomic-operator` at the command line simply enter the following in your terminal:
+
+```bash
+atomic-operator --help
+```
+
+### Retrieving Atomic Tests
+
+In order to use `atomic-operator` you must have one or more [atomic-red-team](https://github.com/redcanaryco/atomic-red-team) tests (Atomics) on your local system. `atomic-operator` provides you with the ability to download the Atomic Red Team repository. You can do so by running the following at the command line:
+
+```bash
+atomic-operator get_atomics 
+# You can specify the destination directory by using the --destination flag
+atomic-operator get_atomics --destination "/tmp/some_directory"
+```
+
+### Running Tests
+
+In order to run a test you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
+
+```bash
+# This will run ALL tests compatiable with your local operating system
+atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624"
+```
+
+### Additional parameters
+
+You can see additional parameters by running the following command:
+
+```bash
+atomic-operator run -- --help
+```
+
+You should see a similar output to the following:
+
+```text
+NAME
+    atomic-operator run - The main method in which we run Atomic Red Team tests.
+
+SYNOPSIS
+    atomic-operator run <flags>
+
+DESCRIPTION
+    The main method in which we run Atomic Red Team tests.
+
+FLAGS
+    --technique=TECHNIQUE
+        One or more defined techniques by attack_technique ID. Defaults to 'All'.
+    --atomics_path=ATOMICS_PATH
+        The path of Atomic tests. Defaults to os.getcwd().
+    --check_dependencies=CHECK_DEPENDENCIES
+        Whether or not to check for dependencies. Defaults to False.
+    --get_prereqs=GET_PREREQS
+        Whether or not you want to retrieve prerequisites. Defaults to False.
+    --cleanup=CLEANUP
+        Whether or not you want to run cleanup command(s). Defaults to False.
+    --command_timeout=COMMAND_TIMEOUT
+        Timeout duration for each command. Defaults to 20.
+    --show_details=SHOW_DETAILS
+        Whether or not you want to output details about tests being ran. Defaults to False.
+    --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
+        Whether you want to prompt for input arguments for each test. Defaults to False.
+    Additional flags are accepted.
+        If provided, keys matching inputs for a test will be replaced. Default is None.
+```
+
+## Usage example (scripts)
+
+To use **atomic-operator** you must instantiate an **AtomicOperator** object.
+
+```python
+from atomic_operator import AtomicOperator
+
+operator = AtomicOperator()
+
+# This will download a local copy of the atomic-red-team repository
+
+print(operator.get_atomics('/tmp/some_directory'))
+
+# this will run tests on your local system
+operator.run(
+    technique: str='All', 
+    atomics_path=os.getcwd(), 
+    check_dependencies=False, 
+    get_prereqs=False, 
+    cleanup=False, 
+    command_timeout=20, 
+    show_details=False,
+    prompt_for_input_args=False,
+    **kwargs
+)
+```
 
 ## Getting Help
 
 Please create an [issue](https://github.com/swimlane/atomic-operator/pulls) if you have questions or run into any issues.
+
+## Built With
+
+* [carcass](https://github.com/MSAdministrator/carcass) - Python packaging template
+
+## Contributing
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. 
+
+## Authors
+
+* Josh Rickard - *Initial work* - [MSAdministrator](https://github.com/MSAdministrator)
+
+See also the list of [contributors](https://github.com/swimlane/atomic-operator/contributors) who participated in this project.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details
