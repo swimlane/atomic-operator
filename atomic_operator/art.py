@@ -22,13 +22,16 @@ class AtomicOperator(Base):
         self.__logger.info(f"Running tests for technique {technique.attack_technique} ({technique.display_name})")
         for test in technique.atomic_tests:
             if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
-                args_dict = kwargs
-                if Base.CONFIG.prompt_for_input_args:
-                    for input in test.input_arguments:
-                        args_dict[input.name] = self.prompt_user_for_input(test.name, input)
-                test.set_command_inputs(**args_dict)
-                self.__logger.info(f"Running {test.name} test")
-                self.show_details(f"Description: {test.description}")
+                args_dict = kwargs if kwargs else {}
+                if self.config_file:
+                    if self.config_file.get(test.auto_generated_guid):
+                        if self.config_file[test.auto_generated_guid]:
+                            args_dict.update(self.config_file[test.auto_generated_guid])
+                        test.set_command_inputs(**args_dict)
+                        self.__logger.info(f"Running {test.name} test")
+                        self.show_details(f"Description: {test.description}")
+                        LocalRunner(test, technique.path).run()
+                else:
                 LocalRunner(test, technique.path).run()
 
     def get_atomics(self, desintation=os.getcwd()):
@@ -47,8 +50,28 @@ class AtomicOperator(Base):
         command_timeout=20, 
         show_details=False,
         prompt_for_input_args=False,
+        config_file=None,
         **kwargs):
         """The main method in which we run Atomic Red Team tests.
+
+        config_file definition:
+            atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
+            specific tests and/or values for input parameters to facilitate automation of said tests.
+            An example of this config_file can be seen below:
+
+                atomic_tests:
+                  - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
+                    input_arguments:
+                      output_file:
+                        value: custom_output.txt
+                      input_file:
+                        value: custom_input.txt
+                  - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
+                    input_arguments:
+                      second_arg:
+                        value: SWAPPPED argument
+                  - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+
 
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
@@ -59,6 +82,7 @@ class AtomicOperator(Base):
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
+            config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
             kwargs (dict, optional): If provided, keys matching inputs for a test will be replaced. Default is None.
 
         Raises:
@@ -66,6 +90,7 @@ class AtomicOperator(Base):
         """
         if not isinstance(techniques, list):
             techniques = [t.strip() for t in techniques.split(',')]
+        self.config_file = self.format_config_data(config_file)
         Base.CONFIG = Config(
             atomics_path          = atomics_path,
             check_dependencies    = check_dependencies,
