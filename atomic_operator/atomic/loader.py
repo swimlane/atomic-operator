@@ -23,7 +23,7 @@ class Loader(Base):
         return result
 
     def load_technique(self, path_to_dir):
-        with open(str(path_to_dir), 'r', encoding="utf-8") as f:
+        with open(path_to_dir, 'r', encoding="utf-8") as f:
             return yaml.load(f.read(), Loader=yaml.SafeLoader)
 
     def load_techniques(self):
