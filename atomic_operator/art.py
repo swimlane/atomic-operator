@@ -32,7 +32,17 @@ class AtomicOperator(Base):
                         self.show_details(f"Description: {test.description}")
                         LocalRunner(test, technique.path).run()
                 else:
-                LocalRunner(test, technique.path).run()
+                    if Base.CONFIG.prompt_for_input_args:
+                        for input in test.input_arguments:
+                            args_dict[input.name] = self.prompt_user_for_input(test.name, input)
+                    test.set_command_inputs(**args_dict)
+                    self.__logger.info(f"Running {test.name} test")
+                    self.show_details(f"Description: {test.description}")
+                    if self.test_guids:
+                        if test.auto_generated_guid in self.test_guids:
+                            LocalRunner(test, technique.path).run()
+                    else:
+                        LocalRunner(test, technique.path).run()
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
