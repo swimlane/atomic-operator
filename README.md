@@ -133,8 +133,10 @@ DESCRIPTION
               - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
 
 FLAGS
-    --technique=TECHNIQUE
+    --techniques=TECHNIQUES
         One or more defined techniques by attack_technique ID. Defaults to 'All'.
+    --test_guids=TEST_GUIDS
+        One or more Atomic test GUIDs. Defaults to None.
     --atomics_path=ATOMICS_PATH
         The path of Atomic tests. Defaults to os.getcwd().
     --check_dependencies=CHECK_DEPENDENCIES

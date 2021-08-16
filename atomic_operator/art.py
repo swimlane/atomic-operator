@@ -43,6 +43,7 @@ class AtomicOperator(Base):
     def run(
         self, 
         techniques: list=['All'], 
+        test_guids: list=[],
         atomics_path=os.getcwd(), 
         check_dependencies=False, 
         get_prereqs=False, 
@@ -75,6 +76,7 @@ class AtomicOperator(Base):
 
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
+            test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
@@ -90,6 +92,7 @@ class AtomicOperator(Base):
         """
         if not isinstance(techniques, list):
             techniques = [t.strip() for t in techniques.split(',')]
+        self.test_guids = test_guids
         self.config_file = self.format_config_data(config_file)
         Base.CONFIG = Config(
             atomics_path          = atomics_path,
