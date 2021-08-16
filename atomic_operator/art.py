@@ -18,7 +18,7 @@ class AtomicOperator(Base):
 
     __techniques = None
 
-    def __run_test(self, technique, **kwargs):
+    def __run_technique(self, technique, **kwargs):
         self.__logger.info(f"Running tests for technique {technique.attack_technique} ({technique.display_name})")
         for test in technique.atomic_tests:
             if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
@@ -82,13 +82,17 @@ class AtomicOperator(Base):
                 if self.__techniques.get(technique):
                     iteration += 1
                     if kwargs:
-                        self.__run_test(self.__techniques[technique], **kwargs.get('kwargs'))
+                        self.__run_technique(self.__techniques[technique], **kwargs.get('kwargs'))
                     else:
-                        self.__run_test(self.__techniques[technique])
+                        self.__run_technique(self.__techniques[technique])
                     pass
                 else:
                     raise ValueError(f"Unable to find technique {technique}")
         elif 'All' in techniques:
             # process all techniques
             for key,val in self.__techniques.items():
-                self.__run_test(val)
+                if kwargs:
+                    self.__run_technique(val, **kwargs.get('kwargs'))
+                else:
+                    self.__run_technique(val)
+        
