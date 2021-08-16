@@ -34,10 +34,19 @@ class AtomicOperator(Base):
                 else:
                 LocalRunner(test, technique.path).run()
 
-    def get_atomics(self, desintation=os.getcwd()):
+    def get_atomics(self, desintation=os.getcwd(), **kwargs):
+        """Downloads the RedCanary atomic-red-team repository to your local system.
+
+        Args:
+            desintation (str, optional): A folder path to download the repositorty data to. Defaults to os.getcwd().
+            kwargs (dict, optional): This kwargs will be passed along to Python requests library during download. Defaults to None.
+
+        Returns:
+            str: The path the data can be found at.
+        """
         if not os.path.exists(desintation):
             os.makedirs(desintation)
-        folder_name = self.download_atomic_red_team_repo(desintation)
+        folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
         return os.path.join(desintation, folder_name)
 
     def run(

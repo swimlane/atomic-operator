@@ -33,8 +33,8 @@ class Base(metaclass=LoggingBase):
         }
     }
 
-    def download_atomic_red_team_repo(self, save_path):
-        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True)
+    def download_atomic_red_team_repo(self, save_path, **kwargs):
+        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
         z.extractall(save_path)
         return z.namelist()[0]
