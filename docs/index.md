@@ -22,6 +22,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
+* Can be automated further based on a configuration file
 
 ## Getting Started
 
@@ -113,7 +114,23 @@ SYNOPSIS
     atomic-operator run <flags>
 
 DESCRIPTION
-    The main method in which we run Atomic Red Team tests.
+    config_file definition:
+        atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
+        specific tests and/or values for input parameters to facilitate automation of said tests.
+        An example of this config_file can be seen below:
+
+            atomic_tests:
+              - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
+                input_arguments:
+                  output_file:
+                    value: custom_output.txt
+                  input_file:
+                    value: custom_input.txt
+              - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
+                input_arguments:
+                  second_arg:
+                    value: SWAPPPED argument
+              - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
 
 FLAGS
     --technique=TECHNIQUE
@@ -132,8 +149,29 @@ FLAGS
         Whether or not you want to output details about tests being ran. Defaults to False.
     --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
         Whether you want to prompt for input arguments for each test. Defaults to False.
+    --config_file=CONFIG_FILE
+        A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
     Additional flags are accepted.
         If provided, keys matching inputs for a test will be replaced. Default is None.
+```
+
+### Running atomic-operator using a config_file
+
+In addition to the ability to pass in parameters with `atomic-operator` you can also pass in a path to a `config_file` that contains all the atomic tests and their potential inputs. You can see an example of this config_file here:
+
+```yaml
+atomic_tests:
+  - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
+    input_arguments:
+      output_file:
+        value: custom_output.txt
+      input_file:
+        value: custom_input.txt
+  - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
+    input_arguments:
+        second_arg:
+          value: SWAPPPED argument
+  - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
 ```
 
 ## Usage example (scripts)
