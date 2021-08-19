@@ -36,7 +36,7 @@ jobs:
         coverage-badge -o images/coverage.svg -f -q
         git config --local user.email github-actions[bot]@users.noreply.github.com
         git config --local user.name github-actions[bot]
-        git add images/coverage.svg
+        git add images/coverage.svg --force
         git commit -m "Adding code coverage svg"
     - name: Push changes
       uses: ad-m/github-push-action@master
