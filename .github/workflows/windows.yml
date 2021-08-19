@@ -26,7 +26,7 @@ jobs:
       run: |
         start-process pwsh -verb runas 
         pip install -r requirements.txt
-        python -m pip install -r test-requirements.txt
+        python -m pip install -r requirements-dev.txt
         python -m pytest
         python -m coverage run -m pytest
         python -m coverage report
