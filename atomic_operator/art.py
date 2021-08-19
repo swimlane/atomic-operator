@@ -141,4 +141,3 @@ class AtomicOperator(Base):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
                     self.__run_technique(val)
-        
