@@ -30,3 +30,15 @@ jobs:
       run: |
         sudo python -m coverage run -m pytest
         sudo python -m coverage report
+    - name: Generating code-coverage badge
+      run: |
+        sudo pip install coverage-badge
+        coverage-badge -o images/coverage.svg
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add images/coverage.svg
+        git commit -m "Adding code coverage svg"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
