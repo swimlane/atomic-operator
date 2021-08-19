@@ -1,4 +1,6 @@
+import os
 import atomic_operator
+
 import pytest
 
 
@@ -6,5 +8,5 @@ import pytest
 def default_art_fixture():
     from atomic_operator import AtomicOperator
     atomic_op = AtomicOperator()
-    atomic_op.get_atomics()
+    atomic_op.get_atomics(desintation=os.path.dirname(os.path.dirname(__file__)))
     return atomic_op
