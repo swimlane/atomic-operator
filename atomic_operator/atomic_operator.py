@@ -30,7 +30,7 @@ class AtomicOperator(Base):
                 return Base().get_abs_path(value)
 
     def __run_technique(self, technique, **kwargs):
-        self.__logger.info(f"Running tests for technique {technique.attack_technique} ({technique.display_name})")
+        self.__logger.info(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
                 args_dict = kwargs if kwargs else {}
@@ -39,7 +39,7 @@ class AtomicOperator(Base):
                         if self.config_file[test.auto_generated_guid]:
                             args_dict.update(self.config_file[test.auto_generated_guid])
                         test.set_command_inputs(**args_dict)
-                        self.__logger.info(f"Running {test.name} test")
+                        self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid})")
                         self.show_details(f"Description: {test.description}")
                         LocalRunner(test, technique.path).run()
                 else:
@@ -47,7 +47,7 @@ class AtomicOperator(Base):
                         for input in test.input_arguments:
                             args_dict[input.name] = self.prompt_user_for_input(test.name, input)
                     test.set_command_inputs(**args_dict)
-                    self.__logger.info(f"Running {test.name} test")
+                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid})")
                     self.show_details(f"Description: {test.description}")
                     if self.test_guids:
                         if test.auto_generated_guid in self.test_guids:
