@@ -2,6 +2,7 @@ import os
 from .base import Base
 from .config import Config
 from .atomic.loader import Loader
+from .utils.exceptions import AtomicsFolderNotFound
 from .execution.localrunner import LocalRunner
 
 
@@ -29,7 +30,7 @@ class AtomicOperator(Base):
                 return Base().get_abs_path(value)
 
     def __run_technique(self, technique, **kwargs):
-        self.__logger.info(f"Running tests for technique {technique.attack_technique} ({technique.display_name})")
+        self.__logger.info(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
                 args_dict = kwargs if kwargs else {}
@@ -38,7 +39,7 @@ class AtomicOperator(Base):
                         if self.config_file[test.auto_generated_guid]:
                             args_dict.update(self.config_file[test.auto_generated_guid])
                         test.set_command_inputs(**args_dict)
-                        self.__logger.info(f"Running {test.name} test")
+                        self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid})")
                         self.show_details(f"Description: {test.description}")
                         LocalRunner(test, technique.path).run()
                 else:
@@ -46,7 +47,7 @@ class AtomicOperator(Base):
                         for input in test.input_arguments:
                             args_dict[input.name] = self.prompt_user_for_input(test.name, input)
                     test.set_command_inputs(**args_dict)
-                    self.__logger.info(f"Running {test.name} test")
+                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid})")
                     self.show_details(f"Description: {test.description}")
                     if self.test_guids:
                         if test.auto_generated_guid in self.test_guids:
@@ -122,8 +123,11 @@ class AtomicOperator(Base):
             techniques = [t.strip() for t in techniques.split(',')]
         self.test_guids = test_guids
         self.config_file = self.format_config_data(config_file)
+        atomics_path = self.__find_path(atomics_path)
+        if not atomics_path:
+            return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
         Base.CONFIG = Config(
-            atomics_path          = self.__find_path(atomics_path),
+            atomics_path          = atomics_path,
             check_dependencies    = check_dependencies,
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,
@@ -137,7 +141,7 @@ class AtomicOperator(Base):
             for technique in techniques:
                 if self.__techniques.get(technique):
                     iteration += 1
-                    if kwargs:
+                    if kwargs.get('kwargs'):
                         self.__run_technique(self.__techniques[technique], **kwargs.get('kwargs'))
                     else:
                         self.__run_technique(self.__techniques[technique])
@@ -147,7 +151,7 @@ class AtomicOperator(Base):
         elif 'All' in techniques:
             # process all techniques
             for key,val in self.__techniques.items():
-                if kwargs:
+                if kwargs.get('kwargs'):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
                     self.__run_technique(val)
