@@ -1,4 +1,4 @@
-name: Testing atomic-operator on Ubuntu
+name: Code Coverage
 
 on: 
   push
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,3 +30,16 @@ jobs:
       run: |
         sudo python -m coverage run -m pytest
         sudo python -m coverage report
+    - name: Generating code-coverage badge
+      run: |
+        sudo pip install coverage-badge
+        coverage-badge -o images/coverage.svg -f -q
+        git config --local user.email github-actions[bot]@users.noreply.github.com
+        git config --local user.name github-actions[bot]
+        git add images/coverage.svg
+        git commit -m "Adding code coverage svg"
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
