@@ -2,6 +2,7 @@ import os
 from .base import Base
 from .config import Config
 from .atomic.loader import Loader
+from .utils.exceptions import AtomicsFolderNotFound
 from .execution.localrunner import LocalRunner
 
 
@@ -122,8 +123,11 @@ class AtomicOperator(Base):
             techniques = [t.strip() for t in techniques.split(',')]
         self.test_guids = test_guids
         self.config_file = self.format_config_data(config_file)
+        atomics_path = self.__find_path(atomics_path)
+        if not atomics_path:
+            return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
         Base.CONFIG = Config(
-            atomics_path          = self.__find_path(atomics_path),
+            atomics_path          = atomics_path,
             check_dependencies    = check_dependencies,
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,

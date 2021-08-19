@@ -12,3 +12,10 @@ class MissingDefinitionFile(Exception):
     Raised when a definition file cannot be find
     """
     pass
+
+
+class AtomicsFolderNotFound(Exception):
+
+    """Raised when unable to find a folder containing Atomics
+    """
+    pass
