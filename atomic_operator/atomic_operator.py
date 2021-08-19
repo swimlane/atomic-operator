@@ -137,7 +137,7 @@ class AtomicOperator(Base):
             for technique in techniques:
                 if self.__techniques.get(technique):
                     iteration += 1
-                    if kwargs:
+                    if kwargs.get('kwargs'):
                         self.__run_technique(self.__techniques[technique], **kwargs.get('kwargs'))
                     else:
                         self.__run_technique(self.__techniques[technique])
@@ -147,7 +147,7 @@ class AtomicOperator(Base):
         elif 'All' in techniques:
             # process all techniques
             for key,val in self.__techniques.items():
-                if kwargs:
+                if kwargs.get('kwargs'):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
                     self.__run_technique(val)
