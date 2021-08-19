@@ -60,7 +60,7 @@ class AtomicTest:
             for key,val in self.input_arguments.items():
                 argument_dict = {}
                 argument_dict = val
-                argument_dict.update({'name': key})
+                argument_dict.update({'name': key, 'value': val.get('default')})
                 temp_list.append(AtomicTestInput(**argument_dict))
             self.input_arguments = temp_list
         if self.executor:
@@ -82,8 +82,8 @@ class AtomicTest:
         if command:
             # TODO: Figure out how to handle remote execution of these dependencies (e.g. T1037\\src\\batstartup.bat)
             try:
-                command = command.replace('$PathToAtomicsFolder', str(PurePath(Base.CONFIG.atomics_path)))
-                command = command.replace('PathToAtomicsFolder', str(PurePath(Base.CONFIG.atomics_path)))
+                command = command.replace('$PathToAtomicsFolder', str(Base.CONFIG.atomics_path))
+                command = command.replace('PathToAtomicsFolder', str(Base.CONFIG.atomics_path))
             except:
                 pass
             if self.input_arguments:
@@ -99,7 +99,7 @@ class AtomicTest:
                 if kwargs and kwargs.get(arguments.name):
                     arguments.value = kwargs[arguments.name]
                 else:
-                    arguments.value = arguments.default
+                    arguments.value = self.__replace_command_string(arguments.default)
         if self.executor:
             self.executor.command = self.__replace_command_string(self.executor.command)
             self.executor.cleanup_command = self.__replace_command_string(self.executor.cleanup_command)
