@@ -63,7 +63,7 @@ class AtomicOperator(Base):
         self, 
         techniques: list=['All'], 
         test_guids: list=[],
-        atomics_path=os.getcwd(), 
+        atomics_path=[os.path.join(os.getcwd(), x, 'atomics') for x in os.listdir(os.getcwd()) if 'redcanaryco-atomic-red-team' in x][0], 
         check_dependencies=False, 
         get_prereqs=False, 
         cleanup=False, 
@@ -92,11 +92,10 @@ class AtomicOperator(Base):
                         value: SWAPPPED argument
                   - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
 
-
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
-            atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
+            atomics_path (str, optional): The path of Atomic tests. Defaults to [os.path.join(os.getcwd(), x, 'atomics') for x in os.listdir(os.getcwd()) if 'redcanaryco-atomic-red-team' in x][0].
             check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
