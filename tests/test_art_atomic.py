@@ -1,6 +1,6 @@
 import os
 from pytest import raises
-from atomic_operator.art import Loader
+from atomic_operator.atomic_operator import Loader
 from atomic_operator.atomic.atomic import Atomic
 from atomic_operator.atomic.atomictest import AtomicTest
 from atomic_operator.atomic.atomictest import AtomicExecutor
