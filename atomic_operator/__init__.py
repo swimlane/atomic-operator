@@ -1,3 +1,3 @@
 from .utils.version import __version__
 
-from .art import AtomicOperator
+from .atomic_operator import AtomicOperator

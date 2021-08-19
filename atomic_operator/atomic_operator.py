@@ -18,6 +18,16 @@ class AtomicOperator(Base):
 
     __techniques = None
 
+    def __find_path(self, value):
+        if value == os.getcwd():
+            for x in os.listdir(value):
+                if os.path.isdir(x) and 'redcanaryco-atomic-red-team' in x:
+                    if os.path.exists(Base().get_abs_path(os.path.join(x, 'atomics'))):
+                        return Base().get_abs_path(os.path.join(x, 'atomics'))
+        else:
+            if os.path.exists(Base().get_abs_path(value)):
+                return Base().get_abs_path(value)
+
     def __run_technique(self, technique, **kwargs):
         self.__logger.info(f"Running tests for technique {technique.attack_technique} ({technique.display_name})")
         for test in technique.atomic_tests:
@@ -63,7 +73,7 @@ class AtomicOperator(Base):
         self, 
         techniques: list=['All'], 
         test_guids: list=[],
-        atomics_path=[os.path.join(os.getcwd(), x, 'atomics') for x in os.listdir(os.getcwd()) if 'redcanaryco-atomic-red-team' in x][0], 
+        atomics_path=os.getcwd(), 
         check_dependencies=False, 
         get_prereqs=False, 
         cleanup=False, 
@@ -95,7 +105,7 @@ class AtomicOperator(Base):
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
-            atomics_path (str, optional): The path of Atomic tests. Defaults to [os.path.join(os.getcwd(), x, 'atomics') for x in os.listdir(os.getcwd()) if 'redcanaryco-atomic-red-team' in x][0].
+            atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
@@ -113,7 +123,7 @@ class AtomicOperator(Base):
         self.test_guids = test_guids
         self.config_file = self.format_config_data(config_file)
         Base.CONFIG = Config(
-            atomics_path          = atomics_path,
+            atomics_path          = self.__find_path(atomics_path),
             check_dependencies    = check_dependencies,
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,
