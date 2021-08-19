@@ -33,7 +33,7 @@ jobs:
     - name: Generating code-coverage badge
       run: |
         sudo pip install coverage-badge
-        coverage-badge -o images/coverage.svg
+        coverage-badge -o images/coverage.svg -f -q
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add images/coverage.svg
