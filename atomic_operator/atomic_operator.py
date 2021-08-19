@@ -136,11 +136,9 @@ class AtomicOperator(Base):
             prompt_for_input_args = prompt_for_input_args
         )
         self.__techniques = Loader().load_techniques()
-        iteration = 0
         if 'All' not in techniques:
             for technique in techniques:
                 if self.__techniques.get(technique):
-                    iteration += 1
                     if kwargs.get('kwargs'):
                         self.__run_technique(self.__techniques[technique], **kwargs.get('kwargs'))
                     else:
