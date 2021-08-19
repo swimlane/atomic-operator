@@ -12,6 +12,7 @@ class AtomicTestInput:
     description = attr.ib()
     type = attr.ib()
     default = attr.ib()
+    value = attr.ib(default=None)
 
 
 @attr.s
