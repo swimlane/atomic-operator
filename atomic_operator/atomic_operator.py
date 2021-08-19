@@ -30,7 +30,7 @@ class AtomicOperator(Base):
                 return Base().get_abs_path(value)
 
     def __run_technique(self, technique, **kwargs):
-        self.__logger.info(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
+        self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
                 args_dict = kwargs if kwargs else {}
