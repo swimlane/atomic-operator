@@ -22,7 +22,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
-* Can be automated further based on a configuration file
+* Running tests can be automated further based on a configuration file
 
 ## Getting Started
 
