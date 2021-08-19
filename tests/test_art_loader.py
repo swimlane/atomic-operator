@@ -1,6 +1,6 @@
 import os
 from pytest import raises
-from atomic_operator.art import Loader
+from atomic_operator.atomic_operator import Loader
 
 
 def test_loader_attribute_error():

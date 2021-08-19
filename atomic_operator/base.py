@@ -33,11 +33,31 @@ class Base(metaclass=LoggingBase):
         }
     }
 
-    def download_atomic_red_team_repo(self, save_path):
-        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True)
+    def download_atomic_red_team_repo(self, save_path, **kwargs):
+        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
         z.extractall(save_path)
         return z.namelist()[0]
+
+    def format_config_data(self, config_file):
+        return_dict = {}
+        if config_file:
+            if not os.path.exists(config_file):
+                raise Exception('Please provide a config_file path that exists')
+            from .atomic.loader import Loader
+            config_file = Loader().load_technique(config_file)
+            
+            if not config_file.get('atomic_tests') and not isinstance(config_file, list):
+                raise Exception('Please provide one or more atomic_tests within your config_file')
+            for item in config_file['atomic_tests']:
+                if item.get('guid') not in return_dict:
+                    return_dict[item['guid']] = {}
+                if item.get('input_arguments'):
+                    for key,val in item['input_arguments'].items():
+                        return_dict[item['guid']].update({
+                            key: val.get('value')
+                        })
+        return return_dict
 
     def get_local_system_platform(self):
         os_name = platform.system().lower()

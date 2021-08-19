@@ -6,7 +6,15 @@ As part of the [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team)
 
 ## Get Atomics
 
-You must first either clone or download the Atomics to your local system. To clone this repository, you can run:
+`atomic-operator` provides you with the ability to download the Atomic Red Team repository. You can do so by running the following at the command line:
+
+```bash
+atomic-operator get_atomics 
+# You can specify the destination directory by using the --destination flag
+atomic-operator get_atomics --destination "/tmp/some_directory"
+```
+
+Secondarily, you can also just clone or download the Atomics to your local system. To clone this repository, you can run:
 
 ```bash
 git clone https://github.com/redcanaryco/atomic-red-team.git
