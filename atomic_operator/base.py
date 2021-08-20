@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import zipfile
 from io import BytesIO
@@ -32,6 +33,11 @@ class Base(metaclass=LoggingBase):
             'macos': '/bin/bash'
         }
     }
+
+    def clean_output(self, data):
+        # Remove Windows CLI garbage
+        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data)
+        return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
     def download_atomic_red_team_repo(self, save_path, **kwargs):
         response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
@@ -85,6 +91,15 @@ Inputs for {title}:
             return value
         return input_object.default
 
+    def print_process_output(self, outs, errs):
+        # Output the appropriate outputs if they exist.
+        if outs:
+            self.__logger.info("Output: {}".format(self.clean_output(outs.decode("utf-8", "ignore"))))
+        else:
+            self.__logger.info("(No output)")
+        if errs:
+            self.__logger.error("Errors: {}".format(self.clean_output(errs.decode("utf-8", "ignore"))))
+
     def execute_subprocess(self, executor, command, cwd):
         p = subprocess.Popen(
             executor, 
@@ -102,6 +117,7 @@ Inputs for {title}:
             )
             if p.returncode != 0:
                 self.__logger.warning(f"Command: {command} returned exit code {p.returncode}: {outs}")
+            self.print_process_output(outs, errs)
             return outs, errs
         except subprocess.TimeoutExpired as e:
             # Display output if it exists.
