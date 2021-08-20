@@ -13,6 +13,24 @@ class AtomicOperator(Base):
     atomic-operator is used to run Atomic Red Team tests both locally and remotely.
     These tests (atomics) are predefined tests to mock or emulate a specific technique.
 
+    config_file definition:
+            atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
+            specific tests and/or values for input parameters to facilitate automation of said tests.
+            An example of this config_file can be seen below:
+
+                atomic_tests:
+                  - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
+                    input_arguments:
+                      output_file:
+                        value: custom_output.txt
+                      input_file:
+                        value: custom_input.txt
+                  - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
+                    input_arguments:
+                      second_arg:
+                        value: SWAPPPED argument
+                  - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+
     Raises:
         ValueError: If a provided technique is unknown we raise an error.
     """
@@ -84,24 +102,6 @@ class AtomicOperator(Base):
         config_file=None,
         **kwargs):
         """The main method in which we run Atomic Red Team tests.
-
-        config_file definition:
-            atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
-            specific tests and/or values for input parameters to facilitate automation of said tests.
-            An example of this config_file can be seen below:
-
-                atomic_tests:
-                  - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
-                    input_arguments:
-                      output_file:
-                        value: custom_output.txt
-                      input_file:
-                        value: custom_input.txt
-                  - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
-                    input_arguments:
-                      second_arg:
-                        value: SWAPPPED argument
-                  - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
 
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
