@@ -19,3 +19,9 @@ class AtomicsFolderNotFound(Exception):
     """Raised when unable to find a folder containing Atomics
     """
     pass
+
+class MalformedFile(Exception):
+
+    """Raised when a file does not meet an expected and defined format structure
+    """
+    pass

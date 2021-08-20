@@ -79,6 +79,8 @@ python setup.py install
 You can run `atomic-operator` from the command line or within your own Python scripts. To use `atomic-operator` at the command line simply enter the following in your terminal:
 
 ```bash
+atomic-operator
+# or
 atomic-operator --help
 ```
 

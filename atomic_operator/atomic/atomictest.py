@@ -93,7 +93,8 @@ class AtomicTest:
         return command
 
     def set_command_inputs(self, **kwargs):
-        # Only parse for inputs defined. If not defined then ignore kwargs
+        """Only parse for inputs defined. If not defined then ignores kwargs
+        """
         if self.input_arguments:
             for arguments in self.input_arguments:
                 if kwargs and kwargs.get(arguments.name):
