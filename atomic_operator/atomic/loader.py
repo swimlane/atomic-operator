@@ -5,6 +5,7 @@ import yaml
 
 from ..base import Base
 from .atomic import Atomic
+from ..utils.exceptions import AtomicsFolderNotFound
 
 
 class Loader(Base):
@@ -35,7 +36,7 @@ class Loader(Base):
         """The main entrypoint when loading techniques from disk.
 
         Raises:
-            Exception: Thrown when unable to find the folder containing
+            AtomicsFolderNotFound: Thrown when unable to find the folder containing
                        Atomic tests
 
         Returns:
@@ -46,11 +47,11 @@ class Loader(Base):
         if not os.path.exists(self.get_abs_path(atomics_path)):
             atomics_path = self.find_atomics(self.get_abs_path(__file__))
             if not atomics_path:
-                raise Exception('Unable to find any atomics folder')
+                raise AtomicsFolderNotFound('Unable to find any atomics folder')
         else:
             atomics_path = self.find_atomics(atomics_path)
             if not atomics_path:
-                raise Exception('Unable to find any atomics folder')
+                raise AtomicsFolderNotFound('Unable to find any atomics folder')
 
         for atomic_entry in atomics_path:
             technique = self.__get_file_name(atomic_entry)

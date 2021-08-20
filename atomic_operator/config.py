@@ -1,10 +1,17 @@
 import os
 import attr
+from .utils.exceptions import AtomicsFolderNotFound
 
 
 # Setting frozen to True means immutability (static) values once set
 @attr.s(frozen=True)
 class Config:
+
+    """The main configuration class used across atomic-operator
+
+    Raises:
+        AtomicsFolderNotFound: Raised when unable to find the provided atomics_path value
+    """
 
     atomics_path          = attr.ib()
     check_dependencies    = attr.ib(default=False)
@@ -24,4 +31,4 @@ class Config:
     def validate_atomics_path(self, attribute, value):
         value = self.__get_abs_path(value)
         if not os.path.exists(value):
-            raise ValueError('Please provide a value for atomics_path that exists')
+            raise AtomicsFolderNotFound('Please provide a value for atomics_path that exists')
