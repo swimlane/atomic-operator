@@ -122,12 +122,12 @@ Inputs for {title}:
         except subprocess.TimeoutExpired as e:
             # Display output if it exists.
             if e.output:
-                print(e.output)
+                self.__logger.warning(e.output)
             if e.stdout:
-                print(e.stdout)
+                self.__logger.warning(e.stdout)
             if e.stderr:
-                print(e.stderr)
-            print("Command timed out!")
+                self.__logger.warning(e.stderr)
+            self.__logger.warning("Command timed out!")
 
             # Kill the process.
             p.kill()
