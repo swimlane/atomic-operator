@@ -8,6 +8,7 @@ import subprocess
 import requests
 from .config import Config
 from .utils.logger import LoggingBase
+from .utils.exceptions import MalformedFile
 
 
 class Base(metaclass=LoggingBase):
@@ -46,6 +47,8 @@ class Base(metaclass=LoggingBase):
         return z.namelist()[0]
 
     def format_config_data(self, config_file):
+            MalformedFile: Raises if the provided config file does not meet the defined format
+
         return_dict = {}
         if config_file:
             if not os.path.exists(config_file):
@@ -54,7 +57,7 @@ class Base(metaclass=LoggingBase):
             config_file = Loader().load_technique(config_file)
             
             if not config_file.get('atomic_tests') and not isinstance(config_file, list):
-                raise Exception('Please provide one or more atomic_tests within your config_file')
+                raise  MalformedFile('Please provide one or more atomic_tests within your config_file')
             for item in config_file['atomic_tests']:
                 if item.get('guid') not in return_dict:
                     return_dict[item['guid']] = {}
