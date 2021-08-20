@@ -45,7 +45,8 @@ class Base(metaclass=LoggingBase):
             str: A cleaned string which will be displayed on the console and in logs
         """
         # Remove Windows CLI garbage
-        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data)
+        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data.decode("utf-8", "ignore"))
+        # formats strings with newline and return characters
         return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
     def download_atomic_red_team_repo(self, save_path, **kwargs):
@@ -78,10 +79,10 @@ class Base(metaclass=LoggingBase):
         return_dict = {}
         if config_file:
             if not os.path.exists(config_file):
-                raise Exception('Please provide a config_file path that exists')
+                raise FileNotFoundError('Please provide a config_file path that exists')
             from .atomic.loader import Loader
             config_file = Loader().load_technique(config_file)
-            
+
             if not config_file.get('atomic_tests') and not isinstance(config_file, list):
                 raise  MalformedFile('Please provide one or more atomic_tests within your config_file')
             for item in config_file['atomic_tests']:
@@ -149,10 +150,13 @@ Inputs for {title}:
             output (bytes): Output from subprocess which is typically in bytes
             errors (bytes): Errors from subprocess which is typically in bytes
         """
+        if output or errors:
+            if output:
+                self.__logger.info("\n\nOutput: {}".format(self.clean_output(output)))
+            else:
+                self.__logger.warning(f"\n\nCommand: {command} returned exit code {return_code}: \n{self.clean_output(errors)}")
         else:
             self.__logger.info("(No output)")
-        if errs:
-            self.__logger.error("Errors: {}".format(self.clean_output(errs.decode("utf-8", "ignore"))))
 
     def execute_subprocess(self, executor, command, cwd):
         """Executes commands using subprocess
@@ -179,9 +183,7 @@ Inputs for {title}:
                 bytes(command, "utf-8") + b"\n", 
                 timeout=Base.CONFIG.command_timeout
             )
-            if p.returncode != 0:
-                self.__logger.warning(f"Command: {command} returned exit code {p.returncode}: {outs}")
-            self.print_process_output(outs, errs)
+            self.print_process_output(command, p.returncode, outs, errs)
             return outs, errs
         except subprocess.TimeoutExpired as e:
             # Display output if it exists.
