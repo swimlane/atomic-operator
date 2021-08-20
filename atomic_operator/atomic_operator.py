@@ -67,8 +67,8 @@ class AtomicOperator(Base):
                     test.set_command_inputs(**args_dict)
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.show_details(f"Description: {test.description}")
-                    if self.test_guids:
-                        if test.auto_generated_guid in self.test_guids:
+                    if self._test_guids:
+                        if test.auto_generated_guid in self._test_guids:
                             LocalRunner(test, technique.path).run()
                     else:
                         LocalRunner(test, technique.path).run()
@@ -123,6 +123,11 @@ class AtomicOperator(Base):
             self._techniques = [t.strip() for t in techniques.split(',')]
         else:
             self._techniques = techniques
+        if not isinstance(test_guids, list):
+            self._test_guids = [t.strip() for t in test_guids.split(',')]
+        else:
+            self._test_guids = test_guids
+
         self.config_file = self.format_config_data(config_file)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
