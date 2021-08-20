@@ -29,7 +29,7 @@ class LoggingBase(type):
 
         setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
 
-    def setup_logging(cls, default_path='./data/logging.yml', default_level=logging.INFO, env_key='LOG_CFG'):
+    def setup_logging(cls, default_path='./atomic_operator/data/logging.yml', default_level=logging.INFO, env_key='LOG_CFG'):
         """Setup logging configuration
         """
         path = os.path.abspath(os.path.expanduser(os.path.expandvars(default_path)))
