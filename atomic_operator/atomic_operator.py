@@ -120,8 +120,9 @@ class AtomicOperator(Base):
             ValueError: If a provided technique is unknown we raise an error.
         """
         if not isinstance(techniques, list):
-            techniques = [t.strip() for t in techniques.split(',')]
-        self.test_guids = test_guids
+            self._techniques = [t.strip() for t in techniques.split(',')]
+        else:
+            self._techniques = techniques
         self.config_file = self.format_config_data(config_file)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
@@ -135,20 +136,20 @@ class AtomicOperator(Base):
             show_details          = show_details,
             prompt_for_input_args = prompt_for_input_args
         )
-        self.__techniques = Loader().load_techniques()
-        if 'All' not in techniques:
-            for technique in techniques:
-                if self.__techniques.get(technique):
+        self.__loaded_techniques = Loader().load_techniques()
+        if 'All' not in self._techniques:
+            for technique in self._techniques:
+                if self.__loaded_techniques.get(technique):
                     if kwargs.get('kwargs'):
-                        self.__run_technique(self.__techniques[technique], **kwargs.get('kwargs'))
+                        self.__run_technique(self.__loaded_techniques[technique], **kwargs.get('kwargs'))
                     else:
-                        self.__run_technique(self.__techniques[technique])
+                        self.__run_technique(self.__loaded_techniques[technique])
                     pass
                 else:
                     raise ValueError(f"Unable to find technique {technique}")
-        elif 'All' in techniques:
+        elif 'All' in self._techniques:
             # process all techniques
-            for key,val in self.__techniques.items():
+            for key,val in self.__loaded_techniques.items():
                 if kwargs.get('kwargs'):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
