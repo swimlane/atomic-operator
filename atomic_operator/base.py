@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import zipfile
 from io import BytesIO
@@ -32,6 +33,11 @@ class Base(metaclass=LoggingBase):
             'macos': '/bin/bash'
         }
     }
+
+    def clean_output(self, data):
+        # Remove Windows CLI garbage
+        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data)
+        return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
     def download_atomic_red_team_repo(self, save_path, **kwargs):
         response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
@@ -85,26 +91,14 @@ Inputs for {title}:
             return value
         return input_object.default
 
-    def print_progress_bar(self, iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-        """
-        Call in a loop to create terminal progress bar
-        @params:
-            iteration   - Required  : current iteration (Int)
-            total       - Required  : total iterations (Int)
-            prefix      - Optional  : prefix string (Str)
-            suffix      - Optional  : suffix string (Str)
-            decimals    - Optional  : positive number of decimals in percent complete (Int)
-            length      - Optional  : character length of bar (Int)
-            fill        - Optional  : bar fill character (Str)
-            printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-        """
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-        filledLength = int(length * iteration // total)
-        bar = fill * filledLength + '-' * (length - filledLength)
-        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-        # Print New Line on Complete
-        if iteration == total: 
-            print()
+    def print_process_output(self, outs, errs):
+        # Output the appropriate outputs if they exist.
+        if outs:
+            self.__logger.info("Output: {}".format(self.clean_output(outs.decode("utf-8", "ignore"))))
+        else:
+            self.__logger.info("(No output)")
+        if errs:
+            self.__logger.error("Errors: {}".format(self.clean_output(errs.decode("utf-8", "ignore"))))
 
     def execute_subprocess(self, executor, command, cwd):
         p = subprocess.Popen(
@@ -123,16 +117,17 @@ Inputs for {title}:
             )
             if p.returncode != 0:
                 self.__logger.warning(f"Command: {command} returned exit code {p.returncode}: {outs}")
+            self.print_process_output(outs, errs)
             return outs, errs
         except subprocess.TimeoutExpired as e:
             # Display output if it exists.
             if e.output:
-                print(e.output)
+                self.__logger.warning(e.output)
             if e.stdout:
-                print(e.stdout)
+                self.__logger.warning(e.stdout)
             if e.stderr:
-                print(e.stderr)
-            print("Command timed out!")
+                self.__logger.warning(e.stderr)
+            self.__logger.warning("Command timed out!")
 
             # Kill the process.
             p.kill()

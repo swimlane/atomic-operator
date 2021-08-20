@@ -23,8 +23,13 @@ class Loader(Base):
         return result
 
     def load_technique(self, path_to_dir):
-        with open(path_to_dir, 'r', encoding="utf-8") as f:
-            return yaml.load(f.read(), Loader=yaml.SafeLoader)
+        try:
+            with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
+                return yaml.load(f.read(), Loader=yaml.SafeLoader)
+        except:
+            # windows does not like get_abs_path so casting to string
+            with open(str(path_to_dir), 'r', encoding="utf-8") as f:
+                return yaml.load(f.read(), Loader=yaml.SafeLoader)
 
     def load_techniques(self):
         """The main entrypoint when loading techniques from disk.
