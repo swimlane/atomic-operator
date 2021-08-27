@@ -47,31 +47,41 @@ class AtomicOperator(Base):
             if os.path.exists(Base().get_abs_path(value)):
                 return Base().get_abs_path(value)
 
+    def __check_platform(self, test, show_output=False):
+        if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
+            output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
+            if show_output:
+                self.__logger.warning(output_string)
+            else:
+                self.show_details(output_string)
+            return False
+        return True
+
     def __run_technique(self, technique, **kwargs):
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
-            if test.supported_platforms and self.get_local_system_platform() in test.supported_platforms:
-                args_dict = kwargs if kwargs else {}
-                if self.config_file:
-                    if self.config_file.get(test.auto_generated_guid):
+            __should_run_test = False
+            args_dict = kwargs if kwargs else {}
+            if Base.CONFIG.prompt_for_input_args:
+                for input in test.input_arguments:
+                    args_dict[input.name] = self.prompt_user_for_input(test.name, input)
+            if self.config_file:
+                if self.config_file.get(test.auto_generated_guid):
+                    if self.__check_platform(test, show_output=True):
                         if self.config_file[test.auto_generated_guid]:
                             args_dict.update(self.config_file[test.auto_generated_guid])
-                        test.set_command_inputs(**args_dict)
-                        self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                        self.show_details(f"Description: {test.description}")
-                        LocalRunner(test, technique.path).run()
-                else:
-                    if Base.CONFIG.prompt_for_input_args:
-                        for input in test.input_arguments:
-                            args_dict[input.name] = self.prompt_user_for_input(test.name, input)
-                    test.set_command_inputs(**args_dict)
-                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                    self.show_details(f"Description: {test.description}")
-                    if self._test_guids:
-                        if test.auto_generated_guid in self._test_guids:
-                            LocalRunner(test, technique.path).run()
-                    else:
-                        LocalRunner(test, technique.path).run()
+                        __should_run_test = True
+            if self.__test_guids and test.auto_generated_guid in self.__test_guids:
+                if self.__check_platform(test, show_output=True):
+                    __should_run_test = True
+            if not self.config_file and not self.__test_guids:
+                if self.__check_platform(test):
+                    __should_run_test = True
+            if __should_run_test:
+                test.set_command_inputs(**args_dict)
+                self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
+                self.show_details(f"Description: {test.description}")
+                LocalRunner(test, technique.path).run()
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
@@ -124,11 +134,11 @@ class AtomicOperator(Base):
         else:
             self._techniques = techniques
         if not isinstance(test_guids, list):
-            self._test_guids = [t.strip() for t in test_guids.split(',')]
+            self.__test_guids = set([t.strip() for t in test_guids.split(',')])
         else:
-            self._test_guids = test_guids
-
+            self.__test_guids = set(test_guids)
         self.config_file = self.format_config_data(config_file)
+        self.__test_guids = list(self.__test_guids)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
