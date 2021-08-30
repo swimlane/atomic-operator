@@ -65,12 +65,11 @@ class AtomicOperator(Base):
             if Base.CONFIG.prompt_for_input_args:
                 for input in test.input_arguments:
                     args_dict[input.name] = self.prompt_user_for_input(test.name, input)
-            if self.config_file:
-                if self.config_file.get(test.auto_generated_guid):
-                    if self.__check_platform(test, show_output=True):
-                        if self.config_file[test.auto_generated_guid]:
-                            args_dict.update(self.config_file[test.auto_generated_guid])
-                        __should_run_test = True
+            if self.config_file and test.auto_generated_guid in self.config_file.keys():
+                if self.__check_platform(test, show_output=True):
+                    if self.config_file[test.auto_generated_guid]:
+                        args_dict.update(self.config_file[test.auto_generated_guid])
+                    __should_run_test = True
             if self.__test_guids and test.auto_generated_guid in self.__test_guids:
                 if self.__check_platform(test, show_output=True):
                     __should_run_test = True
