@@ -97,10 +97,11 @@ class AtomicTest:
         """
         if self.input_arguments:
             for arguments in self.input_arguments:
-                if kwargs and kwargs.get(arguments.name):
-                    arguments.value = kwargs[arguments.name]
-                else:
-                    arguments.value = self.__replace_command_string(arguments.default)
+                if arguments.type.lower() != 'integer':
+                    if kwargs and kwargs.get(arguments.name):
+                        arguments.value = kwargs[arguments.name]
+                    else:
+                        arguments.value = self.__replace_command_string(arguments.default)
         if self.executor:
             self.executor.command = self.__replace_command_string(self.executor.command)
             self.executor.cleanup_command = self.__replace_command_string(self.executor.cleanup_command)
