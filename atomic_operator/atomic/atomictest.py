@@ -89,7 +89,11 @@ class AtomicTest:
             if self.input_arguments:
                 for input in self.input_arguments:
                     for string in self._replacement_strings:
-                        command = command.replace(str(string.format(input.name)), str(input.value))
+                        try:
+                            command = command.replace(str(string.format(input.name)), str(input.value))
+                        except:
+                            # catching errors since some inputs are actually integers but defined as strings
+                            pass
         return command
 
     def set_command_inputs(self, **kwargs):
