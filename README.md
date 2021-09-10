@@ -9,7 +9,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.0.1 ([What's new?](CHANGELOG.md))
+> Current Version: v0.1.0 ([What's new?](release-notes.md))
 
 ## Why?
 
@@ -24,10 +24,10 @@ Additionally, `atomic-operator` can be used in many other situations like:
 
 ## Features
 
-* Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
+* Support local and remote execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
-* Running tests can be automated further based on a configuration file
+* Can be automated further based on a configuration file
 
 ## Getting Started
 
@@ -55,9 +55,10 @@ The following libraries are required and installed by atomic-operator:
 
 ```
 pyyaml==5.4.1
-fire==0.3.1
+fire==0.4.0
 requests==2.26.0
 attrs==21.2.0
+rudder==0.2.0
 ```
 
 ### macOS, Linux and Windows:
@@ -79,8 +80,6 @@ python setup.py install
 You can run `atomic-operator` from the command line or within your own Python scripts. To use `atomic-operator` at the command line simply enter the following in your terminal:
 
 ```bash
-atomic-operator
-# or
 atomic-operator --help
 ```
 
@@ -94,13 +93,22 @@ atomic-operator get_atomics
 atomic-operator get_atomics --destination "/tmp/some_directory"
 ```
 
-### Running Tests
+### Running Tests Locally
 
 In order to run a test you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
 
 ```bash
 # This will run ALL tests compatiable with your local operating system
 atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624"
+```
+
+### Running Tests Remotely
+
+In order to run a test remotely you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
+
+```bash
+# This will run ALL tests compatiable with your local operating system
+atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624" --hosts "10.32.1.0" --username "my_username" --password "my_password"
 ```
 
 ### Additional parameters
@@ -121,45 +129,66 @@ SYNOPSIS
     atomic-operator run <flags>
 
 DESCRIPTION
-    config_file definition:
-        atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
-        specific tests and/or values for input parameters to facilitate automation of said tests.
-        An example of this config_file can be seen below:
-
-            atomic_tests:
-              - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
-                input_arguments:
-                  output_file:
-                    value: custom_output.txt
-                  input_file:
-                    value: custom_input.txt
-              - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
-                input_arguments:
-                  second_arg:
-                    value: SWAPPPED argument
-              - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+    The main method in which we run Atomic Red Team tests.
 
 FLAGS
     --techniques=TECHNIQUES
+        Type: list
+        Default: ['All']
         One or more defined techniques by attack_technique ID. Defaults to 'All'.
     --test_guids=TEST_GUIDS
+        Type: list
+        Default: []
         One or more Atomic test GUIDs. Defaults to None.
     --atomics_path=ATOMICS_PATH
+        Default: '/U...
         The path of Atomic tests. Defaults to os.getcwd().
     --check_dependencies=CHECK_DEPENDENCIES
+        Default: False
         Whether or not to check for dependencies. Defaults to False.
     --get_prereqs=GET_PREREQS
+        Default: False
         Whether or not you want to retrieve prerequisites. Defaults to False.
     --cleanup=CLEANUP
+        Default: False
         Whether or not you want to run cleanup command(s). Defaults to False.
     --command_timeout=COMMAND_TIMEOUT
+        Default: 20
         Timeout duration for each command. Defaults to 20.
     --show_details=SHOW_DETAILS
+        Default: False
         Whether or not you want to output details about tests being ran. Defaults to False.
     --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
+        Default: False
         Whether you want to prompt for input arguments for each test. Defaults to False.
     --config_file=CONFIG_FILE
+        Type: Optional[]
+        Default: None
         A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
+    --hosts=HOSTS
+        Default: []
+        A list of one or more remote hosts to run a test on. Defaults to [].
+    --username=USERNAME
+        Type: Optional[]
+        Default: None
+        Username for authentication of remote connections. Defaults to None.
+    --password=PASSWORD
+        Type: Optional[]
+        Default: None
+        Password for authentication of remote connections. Defaults to None.
+    --ssh_key_path=SSH_KEY_PATH
+        Type: Optional[]
+        Default: None
+        Path to a SSH Key for authentication of remote connections. Defaults to None.
+    --verify_ssl=VERIFY_SSL
+        Default: False
+        Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
+    --ssh_port=SSH_PORT
+        Default: 22
+        SSH port for authentication of remote connections. Defaults to 22.
+    --ssh_timeout=SSH_TIMEOUT
+        Default: 5
+        SSH timeout for authentication of remote connections. Defaults to 5.
     Additional flags are accepted.
         If provided, keys matching inputs for a test will be replaced. Default is None.
 ```
