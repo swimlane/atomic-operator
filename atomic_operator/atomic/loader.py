@@ -13,10 +13,10 @@ class Loader(Base):
     __techniques = {}
     TECHNIQUE_DIRECTORY_PATTERN = 'T*'
 
-    def __get_file_name(self, path):
+    def __get_file_name(self, path) -> str:
         return path.name.rstrip('.yaml')
 
-    def find_atomics(self, atomics_path, pattern='**/T*/T*.yaml'):
+    def find_atomics(self, atomics_path, pattern='**/T*/T*.yaml') -> list:
         """Attempts to find the atomics folder within the provided atomics_path
 
         Args:
@@ -32,7 +32,7 @@ class Loader(Base):
             result.append(p.resolve())
         return result
 
-    def load_technique(self, path_to_dir):
+    def load_technique(self, path_to_dir) -> dict:
         """Loads a provided yaml file which is typically an Atomic defintiion or configuration file.
 
         Args:
@@ -49,7 +49,7 @@ class Loader(Base):
             with open(str(path_to_dir), 'r', encoding="utf-8") as f:
                 return yaml.load(f.read(), Loader=yaml.SafeLoader)
 
-    def load_techniques(self):
+    def load_techniques(self) -> dict:
         """The main entrypoint when loading techniques from disk.
 
         Raises:

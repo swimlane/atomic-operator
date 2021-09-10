@@ -1,0 +1,42 @@
+inventory:
+  windows1:
+    executor: powershell # or cmd
+    input:
+      username: username
+      password: some_passowrd!
+      verify_ssl: false
+    hosts:
+      - 192.168.1.1
+      - 10.32.1.1
+      # etc
+  linux1:
+    executor: ssh
+    authentication:
+      username: username
+      password: some_passowrd!
+      #ssk_key_path:
+      port: 22
+      timeout: 5
+    hosts:
+      - 192.168.1.1
+      - 10.32.100.1
+      # etc.
+atomic_tests:
+  - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
+    input_arguments:
+      output_file:
+        value: custom_output.txt
+      input_file:
+        value: custom_input.txt
+    inventories:
+      - windows1
+  - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
+    input_arguments:
+      second_arg:
+        value: SWAPPPED argument
+    inventories:
+      - windows1
+      - linux1
+  - guid: c141bbdb-7fca-4254-9fd6-f47e79447e17
+    inventories:
+      - linux1
