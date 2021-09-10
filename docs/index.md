@@ -4,7 +4,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.0.1 ([What's new?](release-notes.md))
+> Current Version: v0.1.0 ([What's new?](release-notes.md))
 
 ## Why?
 
@@ -19,7 +19,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 
 ## Features
 
-* Support local execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
+* Support local and remote execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
 * Can be automated further based on a configuration file
@@ -50,9 +50,10 @@ The following libraries are required and installed by atomic-operator:
 
 ```
 pyyaml==5.4.1
-fire==0.3.1
+fire==0.4.0
 requests==2.26.0
 attrs==21.2.0
+rudder==0.2.0
 ```
 
 ### macOS, Linux and Windows:
@@ -87,7 +88,7 @@ atomic-operator get_atomics
 atomic-operator get_atomics --destination "/tmp/some_directory"
 ```
 
-### Running Tests
+### Running Tests Locally
 
 In order to run a test you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
 
@@ -95,6 +96,10 @@ In order to run a test you must provide some additional properties (and options 
 # This will run ALL tests compatiable with your local operating system
 atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624"
 ```
+
+### Running Tests Remotely
+
+
 
 ### Additional parameters
 

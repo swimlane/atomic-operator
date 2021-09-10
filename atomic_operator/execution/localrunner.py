@@ -16,7 +16,7 @@ class LocalRunner(Base):
         self.test_path = test_path
         self.__local_system_platform = self.get_local_system_platform()
 
-    def __get_executor_command(self):
+    def __get_executor_command(self) -> str:
         """Checking if executor works with local system platform
         """
         __executor = None
@@ -26,7 +26,7 @@ class LocalRunner(Base):
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
-    def __run_dependencies(self, executor):
+    def __run_dependencies(self, executor) -> None:
         """Checking dependencies
         """
         if self.test.dependency_executor_name:
@@ -38,8 +38,8 @@ class LocalRunner(Base):
                 self.execute_subprocess(executor, dependency.get_prereq_command)
             self.execute_subprocess(executor, dependency.prereq_command, self.test_path)
 
-    def run(self):
-        """The main method which runs a single AtomicTest object.
+    def run(self) -> None:
+        """The main method which runs a single AtomicTest object on a local system.
         """
         executor = self.__get_executor_command()
         self.show_details(f"Using {executor} as executor.")

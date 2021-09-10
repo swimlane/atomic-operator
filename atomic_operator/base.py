@@ -8,7 +8,7 @@ import subprocess
 import requests
 from .config import Config
 from .utils.logger import LoggingBase
-from .utils.exceptions import MalformedFile
+
 
 
 class Base(metaclass=LoggingBase):
@@ -35,7 +35,7 @@ class Base(metaclass=LoggingBase):
         }
     }
 
-    def clean_output(self, data):
+    def clean_output(self, data) -> str:
         """Decodes data and strips CLI garbage from returned outputs and errors
 
         Args:
@@ -49,7 +49,7 @@ class Base(metaclass=LoggingBase):
         # formats strings with newline and return characters
         return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
-    def download_atomic_red_team_repo(self, save_path, **kwargs):
+    def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
 
         Args:
@@ -63,39 +63,7 @@ class Base(metaclass=LoggingBase):
         z.extractall(save_path)
         return z.namelist()[0]
 
-    def format_config_data(self, config_file):
-        """Parses a provide path to a configuration data file (yaml).
-
-        Args:
-            config_file (str): A path to a valid config_file.
-
-        Raises:
-            FileNotFoundError: Raises if provided a config_file path that does not exist
-            MalformedFile: Raises if the provided config file does not meet the defined format
-
-        Returns:
-            dict: A dictionary of configuration values used to drive atomic-operator execution of Atomics
-        """
-        return_dict = {}
-        if config_file:
-            if not os.path.exists(config_file):
-                raise FileNotFoundError('Please provide a config_file path that exists')
-            from .atomic.loader import Loader
-            config_file = Loader().load_technique(config_file)
-
-            if not config_file.get('atomic_tests') and not isinstance(config_file, list):
-                raise  MalformedFile('Please provide one or more atomic_tests within your config_file')
-            for item in config_file['atomic_tests']:
-                if item.get('guid') not in return_dict:
-                    return_dict[item['guid']] = {}
-                if item.get('input_arguments'):
-                    for key,val in item['input_arguments'].items():
-                        return_dict[item['guid']].update({
-                            key: val.get('value')
-                        })
-        return return_dict
-
-    def get_local_system_platform(self):
+    def get_local_system_platform(self) -> str:
         """Identifies the local systems operating system platform
 
         Returns:
@@ -106,7 +74,7 @@ class Base(metaclass=LoggingBase):
             return "macos"
         return os_name
 
-    def get_abs_path(self, value):
+    def get_abs_path(self, value) -> str:
         """Formats and returns the absolute path for a path value
 
         Args:
@@ -117,7 +85,7 @@ class Base(metaclass=LoggingBase):
         """
         return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
 
-    def show_details(self, value):
+    def show_details(self, value) -> None:
         """Displays the provided value string if Base.CONFIG.show_details is True
 
         Args:
@@ -141,7 +109,7 @@ Inputs for {title}:
             return value
         return input_object.default
 
-    def print_process_output(self, command, return_code, output, errors):
+    def print_process_output(self, command, return_code, output, errors) -> None:
         """Outputs the appropriate outputs if they exists to the console and log files
 
         Args:

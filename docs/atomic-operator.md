@@ -50,6 +50,29 @@ DESCRIPTION
         specific tests and/or values for input parameters to facilitate automation of said tests.
         An example of this config_file can be seen below:
 
+            inventory:
+              windows1:
+                executor: powershell # or cmd
+                input:
+                  username: username
+                  password: some_passowrd!
+                  verify_ssl: false
+                hosts:
+                  - 192.168.1.1
+                  - 10.32.1.1
+                  # etc
+              linux1:
+                executor: ssh
+                authentication:
+                  username: username
+                  password: some_passowrd!
+                  #ssk_key_path:
+                  port: 22
+                  timeout: 5
+                hosts:
+                  - 192.168.1.1
+                  - 10.32.100.1
+                  # etc.
             atomic_tests:
               - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
                 input_arguments:
@@ -57,11 +80,18 @@ DESCRIPTION
                     value: custom_output.txt
                   input_file:
                     value: custom_input.txt
+                inventories:
+                  - windows1
               - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
                 input_arguments:
                   second_arg:
                     value: SWAPPPED argument
+                inventories:
+                  - windows1
+                  - linux1
               - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+                inventories:
+                  - linux1
 
 FLAGS
     --techniques=TECHNIQUES
@@ -93,6 +123,29 @@ FLAGS
 In addition to the ability to pass in parameters with `atomic-operator` you can also pass in a path to a `config_file` that contains all the atomic tests and their potential inputs. You can see an example of this config_file here:
 
 ```yaml
+inventory:
+  windows1:
+    executor: powershell # or cmd
+    input:
+      username: username
+      password: some_passowrd!
+      verify_ssl: false
+    hosts:
+      - 192.168.1.1
+      - 10.32.1.1
+      # etc
+  linux1:
+    executor: ssh
+    authentication:
+      username: username
+      password: some_passowrd!
+      #ssk_key_path:
+      port: 22
+      timeout: 5
+    hosts:
+      - 192.168.1.1
+      - 10.32.100.1
+      # etc.
 atomic_tests:
   - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
     input_arguments:
@@ -100,11 +153,18 @@ atomic_tests:
         value: custom_output.txt
       input_file:
         value: custom_input.txt
+    inventories:
+      - windows1
   - guid: 3ff64f0b-3af2-3866-339d-38d9791407c3
     input_arguments:
-        second_arg:
-          value: SWAPPPED argument
+      second_arg:
+        value: SWAPPPED argument
+    inventories:
+      - windows1
+      - linux1
   - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+    inventories:
+      - linux1
 ```
 
 ## Package

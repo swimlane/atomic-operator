@@ -1,9 +1,13 @@
 import os
+from rudder import Host, Runner
+
 from .base import Base
 from .config import Config
+from .parser import ConfigParser
 from .atomic.loader import Loader
 from .utils.exceptions import AtomicsFolderNotFound
 from .execution.localrunner import LocalRunner
+from .execution.remoterunner import RemoteRunner
 
 
 class AtomicOperator(Base):
@@ -18,6 +22,19 @@ class AtomicOperator(Base):
             specific tests and/or values for input parameters to facilitate automation of said tests.
             An example of this config_file can be seen below:
 
+                inventory:
+                  linux1:
+                    executor: ssh
+                    authentication:
+                      username: root
+                      password: UR4Swimlane!
+                      #ssk_key_path:
+                      port: 22
+                      timeout: 5
+                    hosts:
+                      # - 192.168.1.1
+                      - 10.32.100.199
+                      # etc.
                 atomic_tests:
                   - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
                     input_arguments:
@@ -30,12 +47,12 @@ class AtomicOperator(Base):
                       second_arg:
                         value: SWAPPPED argument
                   - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
+                    inventories:
+                      - linux1
 
     Raises:
         ValueError: If a provided technique is unknown we raise an error.
     """
-
-    __techniques = None
 
     def __find_path(self, value):
         if value == os.getcwd():
@@ -47,17 +64,20 @@ class AtomicOperator(Base):
             if os.path.exists(Base().get_abs_path(value)):
                 return Base().get_abs_path(value)
 
-    def __check_platform(self, test, show_output=False):
+    def __show_unsupported_platform(self, test, show_output=False) -> None:
+        output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
+        if show_output:
+            self.__logger.warning(output_string)
+        else:
+            self.show_details(output_string)
+
+    def __check_platform(self, test, show_output=False) -> bool:
         if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
-            if show_output:
-                self.__logger.warning(output_string)
-            else:
-                self.show_details(output_string)
+            self.__show_unsupported_platform(test, show_output=show_output)
             return False
         return True
 
-    def __run_technique(self, technique, **kwargs):
+    def __run_technique(self, technique, **kwargs) -> None:
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             __should_run_test = False
@@ -65,11 +85,11 @@ class AtomicOperator(Base):
             if Base.CONFIG.prompt_for_input_args:
                 for input in test.input_arguments:
                     args_dict[input.name] = self.prompt_user_for_input(test.name, input)
-            if self.config_file and test.auto_generated_guid in self.config_file.keys():
-                if self.__check_platform(test, show_output=True):
-                    if self.config_file[test.auto_generated_guid]:
-                        args_dict.update(self.config_file[test.auto_generated_guid])
-                    __should_run_test = True
+            if self.config_file:
+                if self.config_file.is_defined(test.auto_generated_guid):
+                    if self.__check_platform(test, show_output=True):
+                        args_dict.update(self.config_file.get_inputs(test.auto_generated_guid))
+                        __should_run_test = True
             if self.__test_guids and test.auto_generated_guid in self.__test_guids:
                 if self.__check_platform(test, show_output=True):
                     __should_run_test = True
@@ -80,7 +100,16 @@ class AtomicOperator(Base):
                 test.set_command_inputs(**args_dict)
                 self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                 self.show_details(f"Description: {test.description}")
-                LocalRunner(test, technique.path).run()
+                remote_config = self.config_file.get_inventory(test.auto_generated_guid)
+                if remote_config:
+                    RemoteRunner(test, technique.path, remote_config).run()
+                elif self.__remote_hosts:
+                    if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
+                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
+                    else:
+                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')])
+                else:
+                    LocalRunner(test, technique.path).run()
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
@@ -97,6 +126,30 @@ class AtomicOperator(Base):
         folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
         return os.path.join(desintation, folder_name)
 
+    def __create_remote_host_object(self, 
+        hosts=[],
+        username=None,
+        password=None,
+        ssh_key_path=None,
+        verify_ssl=False,
+        ssh_port=22,
+        ssh_timeout=5):
+            return_list = []
+            if hosts:
+                for host in hosts:
+                    return_list.append(
+                        Host(
+                            hostname=host,
+                            username=username,
+                            password=password,
+                            ssh_key_path=ssh_key_path,
+                            verify_ssl=verify_ssl,
+                            port=ssh_port,
+                            timeout=ssh_timeout
+                        )
+                    )
+            return return_list
+
     def run(
         self, 
         techniques: list=['All'], 
@@ -109,7 +162,14 @@ class AtomicOperator(Base):
         show_details=False,
         prompt_for_input_args=False,
         config_file=None,
-        **kwargs):
+        hosts=[],
+        username=None,
+        password=None,
+        ssh_key_path=None,
+        verify_ssl=False,
+        ssh_port=22,
+        ssh_timeout=5,
+        **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
@@ -123,6 +183,13 @@ class AtomicOperator(Base):
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
+            hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
+            username (str, optional): Username for authentication of remote connections. Defaults to None.
+            password (str, optional): Password for authentication of remote connections. Defaults to None.
+            ssh_key_path (str, optional): Path to a SSH Key for authentication of remote connections. Defaults to None.
+            verify_ssl (bool, optional): Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
+            ssh_port (int, optional): SSH port for authentication of remote connections. Defaults to 22.
+            ssh_timeout (int, optional): SSH timeout for authentication of remote connections. Defaults to 5.
             kwargs (dict, optional): If provided, keys matching inputs for a test will be replaced. Default is None.
 
         Raises:
@@ -136,8 +203,16 @@ class AtomicOperator(Base):
             self.__test_guids = set([t.strip() for t in test_guids.split(',')])
         else:
             self.__test_guids = set(test_guids)
-        self.config_file = self.format_config_data(config_file)
+        self.config_file = ConfigParser(config_file=config_file) if config_file else None
         self.__test_guids = list(self.__test_guids)
+        self.__remote_hosts = self.__create_remote_host_object(
+            hosts=hosts, 
+            username=username, 
+            password=password, 
+            ssh_key_path=ssh_key_path, 
+            verify_ssl=verify_ssl,
+            ssh_port=ssh_port,
+            ssh_timeout=ssh_timeout)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
