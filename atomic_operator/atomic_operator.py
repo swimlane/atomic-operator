@@ -100,9 +100,10 @@ class AtomicOperator(Base):
                 test.set_command_inputs(**args_dict)
                 self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                 self.show_details(f"Description: {test.description}")
-                remote_config = self.config_file.get_inventory(test.auto_generated_guid)
-                if remote_config:
-                    RemoteRunner(test, technique.path, remote_config).run()
+                if self.config_file:
+                    remote_config = self.config_file.get_inventory(test.auto_generated_guid)
+                    if remote_config:
+                        RemoteRunner(test, technique.path, remote_config).run()
                 elif self.__remote_hosts:
                     if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
                         RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
@@ -161,6 +162,7 @@ class AtomicOperator(Base):
         command_timeout=20, 
         show_details=False,
         prompt_for_input_args=False,
+        return_atomics=False,
         config_file=None,
         hosts=[],
         username=None,
@@ -182,6 +184,7 @@ class AtomicOperator(Base):
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
+            return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
             hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
             username (str, optional): Username for authentication of remote connections. Defaults to None.
@@ -226,10 +229,13 @@ class AtomicOperator(Base):
             prompt_for_input_args = prompt_for_input_args
         )
         self.__loaded_techniques = Loader().load_techniques()
+        __return_atomics = []
         if 'All' not in self._techniques:
             for technique in self._techniques:
                 if self.__loaded_techniques.get(technique):
-                    if kwargs.get('kwargs'):
+                    if return_atomics:
+                        __return_atomics.append(self.__loaded_techniques[technique])
+                    elif kwargs.get('kwargs'):
                         self.__run_technique(self.__loaded_techniques[technique], **kwargs.get('kwargs'))
                     else:
                         self.__run_technique(self.__loaded_techniques[technique])
@@ -239,7 +245,11 @@ class AtomicOperator(Base):
         elif 'All' in self._techniques:
             # process all techniques
             for key,val in self.__loaded_techniques.items():
-                if kwargs.get('kwargs'):
+                if return_atomics:
+                    __return_atomics.append(val)
+                elif kwargs.get('kwargs'):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
                     self.__run_technique(val)
+        if return_atomics and __return_atomics:
+            return __return_atomics
