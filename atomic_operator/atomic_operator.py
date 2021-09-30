@@ -132,6 +132,7 @@ class AtomicOperator(Base):
         username=None,
         password=None,
         ssh_key_path=None,
+        private_key_string=None,
         verify_ssl=False,
         ssh_port=22,
         ssh_timeout=5):
@@ -144,6 +145,7 @@ class AtomicOperator(Base):
                             username=username,
                             password=password,
                             ssh_key_path=ssh_key_path,
+                            private_key_string=private_key_string,
                             verify_ssl=verify_ssl,
                             port=ssh_port,
                             timeout=ssh_timeout
@@ -168,6 +170,7 @@ class AtomicOperator(Base):
         username=None,
         password=None,
         ssh_key_path=None,
+        private_key_string=None,
         verify_ssl=False,
         ssh_port=22,
         ssh_timeout=5,
@@ -190,6 +193,7 @@ class AtomicOperator(Base):
             username (str, optional): Username for authentication of remote connections. Defaults to None.
             password (str, optional): Password for authentication of remote connections. Defaults to None.
             ssh_key_path (str, optional): Path to a SSH Key for authentication of remote connections. Defaults to None.
+            private_key_string (str, optional): A private SSH Key string used for authentication of remote connections. Defaults to None.
             verify_ssl (bool, optional): Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
             ssh_port (int, optional): SSH port for authentication of remote connections. Defaults to 22.
             ssh_timeout (int, optional): SSH timeout for authentication of remote connections. Defaults to 5.
@@ -214,6 +218,7 @@ class AtomicOperator(Base):
             password=password, 
             ssh_key_path=ssh_key_path, 
             verify_ssl=verify_ssl,
+            private_key_string=private_key_string,
             ssh_port=ssh_port,
             ssh_timeout=ssh_timeout)
         atomics_path = self.__find_path(atomics_path)
