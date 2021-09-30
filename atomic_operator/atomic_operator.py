@@ -54,6 +54,8 @@ class AtomicOperator(Base):
         ValueError: If a provided technique is unknown we raise an error.
     """
 
+    __test_responses = {}
+
     def __find_path(self, value):
         if value == os.getcwd():
             for x in os.listdir(value):
@@ -100,17 +102,27 @@ class AtomicOperator(Base):
                 test.set_command_inputs(**args_dict)
                 self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                 self.show_details(f"Description: {test.description}")
+                if test.auto_generated_guid not in self.__test_responses:
+                    self.__test_responses[test.auto_generated_guid] = {}
                 if self.config_file:
                     remote_config = self.config_file.get_inventory(test.auto_generated_guid)
                     if remote_config:
-                        RemoteRunner(test, technique.path, remote_config).run()
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, remote_config).run()
+                        )
                 elif self.__remote_hosts:
                     if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
-                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
+                        )
                     else:
-                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')])
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')])
+                        )
                 else:
-                    LocalRunner(test, technique.path).run()
+                    self.__test_responses[test.auto_generated_guid].update(
+                        LocalRunner(test, technique.path).run()
+                    )
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
@@ -258,3 +270,4 @@ class AtomicOperator(Base):
                     self.__run_technique(val)
         if return_atomics and __return_atomics:
             return __return_atomics
+        return self.__test_responses
