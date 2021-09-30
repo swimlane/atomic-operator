@@ -113,11 +113,11 @@ class AtomicOperator(Base):
                 elif self.__remote_hosts:
                     if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')]).run()
                         )
                     else:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')])
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')]).run()
                         )
                 else:
                     self.__test_responses[test.auto_generated_guid].update(

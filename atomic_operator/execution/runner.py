@@ -103,5 +103,3 @@ class Runner(Base):
     @abc.abstractmethod
     def execute_process(self, command, executor=None, host=None, cwd=None):
         raise NotImplementedError
-
-
