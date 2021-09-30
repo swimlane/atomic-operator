@@ -1,7 +1,9 @@
-from ..base import Base
+import os
+import subprocess
+from .runner import Runner
 
 
-class LocalRunner(Base):
+class LocalRunner(Runner):
     """Runs AtomicTest objects locally
     """
 
@@ -16,7 +18,48 @@ class LocalRunner(Base):
         self.test_path = test_path
         self.__local_system_platform = self.get_local_system_platform()
 
-    def __get_executor_command(self) -> str:
+    def execute_process(self, command, executor=None, host=None, cwd=None):
+        """Executes commands using subprocess
+
+        Args:
+            executor (str): An executor or shell used to execute the provided command(s)
+            command (str): The commands to run using subprocess
+            cwd (str): A string which indicates the current working directory to run the command
+
+        Returns:
+            tuple: A tuple of either outputs or errors from subprocess
+        """
+        p = subprocess.Popen(
+            executor, 
+            shell=False, 
+            stdin=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, 
+            env=os.environ, 
+            cwd=cwd
+        )
+        try:
+            outs, errs = p.communicate(
+                bytes(command, "utf-8") + b"\n", 
+                timeout=Runner.CONFIG.command_timeout
+            )
+            response = self.print_process_output(command, p.returncode, outs, errs)
+            return response
+        except subprocess.TimeoutExpired as e:
+            # Display output if it exists.
+            if e.output:
+                self.__logger.warning(e.output)
+            if e.stdout:
+                self.__logger.warning(e.stdout)
+            if e.stderr:
+                self.__logger.warning(e.stderr)
+            self.__logger.warning("Command timed out!")
+
+            # Kill the process.
+            p.kill()
+            return {}
+
+    def _get_executor_command(self):
         """Checking if executor works with local system platform
         """
         __executor = None
@@ -26,28 +69,5 @@ class LocalRunner(Base):
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
-    def __run_dependencies(self, executor) -> None:
-        """Checking dependencies
-        """
-        if self.test.dependency_executor_name:
-            executor = self.test.dependency_executor_name
-        for dependency in self.test.dependencies:
-            self.show_details(f"Dependency description: {dependency.description}")
-            if Base.CONFIG.get_prereqs:
-                self.show_details(f"Retrieving prerequistes")
-                self.execute_subprocess(executor, dependency.get_prereq_command)
-            self.execute_subprocess(executor, dependency.prereq_command, self.test_path)
-
-    def run(self) -> None:
-        """The main method which runs a single AtomicTest object on a local system.
-        """
-        executor = self.__get_executor_command()
-        self.show_details(f"Using {executor} as executor.")
-        if executor:
-            if Base.CONFIG.check_dependencies and self.test.dependencies:
-                self.__run_dependencies(executor)
-            self.show_details("Running command")
-            self.execute_subprocess(executor, self.test.executor.command, self.test_path)
-            if Base.CONFIG.cleanup and self.test.executor.cleanup_command:
-                self.show_details("Running cleanup command")
-                self.execute_subprocess(executor, self.test.executor.cleanup_command, self.test_path)
+    def run(self):
+        return self.execute(executor=self._get_executor_command())
