@@ -4,8 +4,6 @@ from .runner import Runner
 
 class RemoteRunner(Runner):
 
-    __running_log = {}
-
     def __init__(self, atomic_test, test_path, runner):
         """A single AtomicTest object is provided and ran on the local system
 
@@ -26,13 +24,17 @@ class RemoteRunner(Runner):
             executor (str): An executor that can be passed to rudder. Defaults to None.
             host (str): A host to run remote commands on. Defaults to None.
         """
+        if not isinstance(host, list):
+            host = [host]
         response = Rudder().execute(
-            host=[host],
+            host=host,
             executor=executor,
             command=command
         )
-        self.__logger.info(response)
-        return response
+        self.__logger.debug(response)
+        if isinstance(response, dict):
+            for key,val in response.items():
+                return val
 
     def run(self):
         """The main method which runs a single AtomicTest object remotely on one or more defined hosts.
