@@ -38,6 +38,7 @@ class ConfigParser(Base):
                     username=inputs['username'] if inputs.get('username') else None,
                     password=inputs['password'] if inputs.get('password') else None,
                     ssh_key_path=inputs['ssh_key_path'] if inputs.get('ssh_key_path') else None,
+                    private_key_string=inputs['private_key_string'] if inputs.get('private_key_string') else None,
                     verify_ssl=inputs['verify_ssl'] if inputs.get('verify_ssl') else False,
                     port=inputs['port'] if inputs.get('port') else 22,
                     timeout=inputs['timeout'] if inputs.get('timeout') else 5

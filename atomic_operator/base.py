@@ -35,20 +35,6 @@ class Base(metaclass=LoggingBase):
         }
     }
 
-    def clean_output(self, data) -> str:
-        """Decodes data and strips CLI garbage from returned outputs and errors
-
-        Args:
-            data (str): A output or error returned from subprocess
-
-        Returns:
-            str: A cleaned string which will be displayed on the console and in logs
-        """
-        # Remove Windows CLI garbage
-        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data.decode("utf-8", "ignore"))
-        # formats strings with newline and return characters
-        return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
-
     def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
 
@@ -108,61 +94,3 @@ Inputs for {title}:
         if bool(value):
             return value
         return input_object.default
-
-    def print_process_output(self, command, return_code, output, errors) -> None:
-        """Outputs the appropriate outputs if they exists to the console and log files
-
-        Args:
-            command (str): The command which was ran by subprocess
-            return_code (int): The return code from subprocess
-            output (bytes): Output from subprocess which is typically in bytes
-            errors (bytes): Errors from subprocess which is typically in bytes
-        """
-        if output or errors:
-            if output:
-                self.__logger.info("\n\nOutput: {}".format(self.clean_output(output)))
-            else:
-                self.__logger.warning(f"\n\nCommand: {command} returned exit code {return_code}: \n{self.clean_output(errors)}")
-        else:
-            self.__logger.info("(No output)")
-
-    def execute_subprocess(self, executor, command, cwd):
-        """Executes commands using subprocess
-
-        Args:
-            executor (str): An executor or shell used to execute the provided command(s)
-            command (str): The commands to run using subprocess
-            cwd (str): A string which indicates the current working directory to run the command
-
-        Returns:
-            tuple: A tuple of either outputs or errors from subprocess
-        """
-        p = subprocess.Popen(
-            executor, 
-            shell=False, 
-            stdin=subprocess.PIPE, 
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, 
-            env=os.environ, 
-            cwd=cwd
-        )
-        try:
-            outs, errs = p.communicate(
-                bytes(command, "utf-8") + b"\n", 
-                timeout=Base.CONFIG.command_timeout
-            )
-            self.print_process_output(command, p.returncode, outs, errs)
-            return outs, errs
-        except subprocess.TimeoutExpired as e:
-            # Display output if it exists.
-            if e.output:
-                self.__logger.warning(e.output)
-            if e.stdout:
-                self.__logger.warning(e.stdout)
-            if e.stderr:
-                self.__logger.warning(e.stderr)
-            self.__logger.warning("Command timed out!")
-
-            # Kill the process.
-            p.kill()
-            return "", ""
