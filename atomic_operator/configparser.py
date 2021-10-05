@@ -66,9 +66,10 @@ class ConfigParser(Base):
             )
 
     def is_defined(self, guid: str):
-        for item in self.config['atomic_tests']:
-            if item['guid'] == guid:
-                return True
+        if self.config_file:
+            for item in self.config_file['atomic_tests']:
+                if item['guid'] == guid:
+                    return True
         return False
 
     def get_inputs(self, guid: str): 
@@ -80,9 +81,10 @@ class ConfigParser(Base):
         Returns:
             dict: A dictionary of defined input arguments or empty
         """
-        for item in self.config['atomic_tests']:
-            if item['guid'] == guid:
-                return item.get('input_arguments', {})
+        if self.config_file:
+            for item in self.config_file['atomic_tests']:
+                if item['guid'] == guid:
+                    return item.get('input_arguments', {})
         return {}
 
     def get_inventory(self, guid: str):
@@ -95,16 +97,17 @@ class ConfigParser(Base):
             list: Returns a list of Runner objects if GUID is found else None
         """
         return_list = []
-        for item in self.config['atomic_tests']:
-            if item['guid'] == guid and item.get('inventories') and self.config.get('inventory'):
-                # process inventories to run commands remotely
-                for inventory in item['inventories']:
-                    if self.config['inventory'].get(inventory):
-                        return_list.append(
-                            Runner(
-                                hosts=self.__parse_hosts(self.config['inventory'][inventory]),
-                                executor=self.config['inventory'][inventory]['executor'],
-                                command=''
+        if self.config_file:
+            for item in self.config_file['atomic_tests']:
+                if item['guid'] == guid and item.get('inventories') and self.config_file.get('inventory'):
+                    # process inventories to run commands remotely
+                    for inventory in item['inventories']:
+                        if self.config_file['inventory'].get(inventory):
+                            return_list.append(
+                                Runner(
+                                    hosts=self.__parse_hosts(self.config_file['inventory'][inventory]),
+                                    executor=self.config_file['inventory'][inventory]['executor'],
+                                    command=''
+                                )
                             )
-                        )
         return return_list
