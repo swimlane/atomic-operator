@@ -17,12 +17,13 @@ class AWSRunner(Runner):
         self.test = atomic_test
         self.test_path = test_path
         self.__local_system_platform = self.get_local_system_platform()
-        self.__check_for_aws_cli()
 
     def __check_for_aws_cli(self):
-        response = self.execute_process(command='aws --version', executor=self._get_executor_command())
-        print(f"check aws response: {response}")
-
+        response = self.execute_process(command='aws --version', executor=self._get_executor_command(), cwd=os.getcwd())
+        if response and response.get('error'):
+            self.__logger.warning(response['error'])
+            return False
+        return True
 
     def execute_process(self, command, executor=None, host=None, cwd=None):
         """Executes commands using subprocess
@@ -60,7 +61,6 @@ class AWSRunner(Runner):
             if e.stderr:
                 self.__logger.warning(e.stderr)
             self.__logger.warning("Command timed out!")
-
             # Kill the process.
             p.kill()
             return {}
@@ -70,10 +70,11 @@ class AWSRunner(Runner):
         """
         __executor = None
         self.show_details(f"Checking if executor works on local system platform.")
-        if self.__local_system_platform in self.test.supported_platforms:
+        if 'iaas:aws' in self.test.supported_platforms:
             if self.test.executor.name != 'manual':
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
     def run(self):
-        return self.execute(executor=self._get_executor_command())
+        if self.__check_for_aws_cli():
+            return self.execute(executor=self._get_executor_command())

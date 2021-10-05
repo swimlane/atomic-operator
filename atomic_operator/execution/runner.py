@@ -15,10 +15,11 @@ class Runner(Base):
         Returns:
             str: A cleaned string which will be displayed on the console and in logs
         """
-        # Remove Windows CLI garbage
-        data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data.decode("utf-8", "ignore"))
-        # formats strings with newline and return characters
-        return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
+        if data:
+            # Remove Windows CLI garbage
+            data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data.decode("utf-8", "ignore"))
+            # formats strings with newline and return characters
+            return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
     def print_process_output(self, command, return_code, output, errors):
         """Outputs the appropriate outputs if they exists to the console and log files
@@ -30,6 +31,10 @@ class Runner(Base):
             errors (bytes): Errors from subprocess which is typically in bytes
         """
         return_dict = {}
+        if return_code == 127:
+            return_dict['error'] =  f"\n\nCommand Not Found: {command} returned exit code {return_code}: \nErrors: {self.clean_output(errors)}/nOutput: {output}"
+            self.__logger.warning(return_dict['error'])
+            return return_dict
         if output or errors:
             if output:
                 return_dict['output'] = self.clean_output(output)
