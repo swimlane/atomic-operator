@@ -3,11 +3,14 @@ from rudder import Host, Runner
 
 from .base import Base
 from .config import Config
-from .parser import ConfigParser
+from .configparser import ConfigParser
 from .atomic.loader import Loader
 from .utils.exceptions import AtomicsFolderNotFound
-from .execution.localrunner import LocalRunner
-from .execution.remoterunner import RemoteRunner
+from .execution import (
+    LocalRunner,
+    RemoteRunner,
+    AWSRunner
+)
 
 
 class AtomicOperator(Base):
@@ -54,6 +57,8 @@ class AtomicOperator(Base):
         ValueError: If a provided technique is unknown we raise an error.
     """
 
+    __test_responses = {}
+
     def __find_path(self, value):
         if value == os.getcwd():
             for x in os.listdir(value):
@@ -71,7 +76,14 @@ class AtomicOperator(Base):
         else:
             self.show_details(output_string)
 
+    def __check_if_aws(self, test):
+        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+            return True
+        return False
+
     def __check_platform(self, test, show_output=False) -> bool:
+        if self.__check_if_aws(test):
+            return True
         if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
             self.__show_unsupported_platform(test, show_output=show_output)
             return False
@@ -100,16 +112,32 @@ class AtomicOperator(Base):
                 test.set_command_inputs(**args_dict)
                 self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                 self.show_details(f"Description: {test.description}")
-                remote_config = self.config_file.get_inventory(test.auto_generated_guid)
-                if remote_config:
-                    RemoteRunner(test, technique.path, remote_config).run()
+                if test.auto_generated_guid not in self.__test_responses:
+                    self.__test_responses[test.auto_generated_guid] = {}
+                if self.config_file:
+                    remote_config = self.config_file.get_inventory(test.auto_generated_guid)
+                    if remote_config:
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, remote_config).run()
+                        )
                 elif self.__remote_hosts:
                     if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
-                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')])
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')]).run()
+                        )
                     else:
-                        RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')])
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')]).run()
+                        )
                 else:
-                    LocalRunner(test, technique.path).run()
+                    if self.__check_if_aws(test):
+                        self.__test_responses[test.auto_generated_guid].update(
+                            AWSRunner(test, technique.path).run()
+                        )
+                    else:
+                        self.__test_responses[test.auto_generated_guid].update(
+                            LocalRunner(test, technique.path).run()
+                        )
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
@@ -131,6 +159,7 @@ class AtomicOperator(Base):
         username=None,
         password=None,
         ssh_key_path=None,
+        private_key_string=None,
         verify_ssl=False,
         ssh_port=22,
         ssh_timeout=5):
@@ -143,6 +172,7 @@ class AtomicOperator(Base):
                             username=username,
                             password=password,
                             ssh_key_path=ssh_key_path,
+                            private_key_string=private_key_string,
                             verify_ssl=verify_ssl,
                             port=ssh_port,
                             timeout=ssh_timeout
@@ -161,11 +191,13 @@ class AtomicOperator(Base):
         command_timeout=20, 
         show_details=False,
         prompt_for_input_args=False,
+        return_atomics=False,
         config_file=None,
         hosts=[],
         username=None,
         password=None,
         ssh_key_path=None,
+        private_key_string=None,
         verify_ssl=False,
         ssh_port=22,
         ssh_timeout=5,
@@ -182,11 +214,13 @@ class AtomicOperator(Base):
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
+            return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
             hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
             username (str, optional): Username for authentication of remote connections. Defaults to None.
             password (str, optional): Password for authentication of remote connections. Defaults to None.
             ssh_key_path (str, optional): Path to a SSH Key for authentication of remote connections. Defaults to None.
+            private_key_string (str, optional): A private SSH Key string used for authentication of remote connections. Defaults to None.
             verify_ssl (bool, optional): Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
             ssh_port (int, optional): SSH port for authentication of remote connections. Defaults to 22.
             ssh_timeout (int, optional): SSH timeout for authentication of remote connections. Defaults to 5.
@@ -211,6 +245,7 @@ class AtomicOperator(Base):
             password=password, 
             ssh_key_path=ssh_key_path, 
             verify_ssl=verify_ssl,
+            private_key_string=private_key_string,
             ssh_port=ssh_port,
             ssh_timeout=ssh_timeout)
         atomics_path = self.__find_path(atomics_path)
@@ -226,10 +261,13 @@ class AtomicOperator(Base):
             prompt_for_input_args = prompt_for_input_args
         )
         self.__loaded_techniques = Loader().load_techniques()
+        __return_atomics = []
         if 'All' not in self._techniques:
             for technique in self._techniques:
                 if self.__loaded_techniques.get(technique):
-                    if kwargs.get('kwargs'):
+                    if return_atomics:
+                        __return_atomics.append(self.__loaded_techniques[technique])
+                    elif kwargs.get('kwargs'):
                         self.__run_technique(self.__loaded_techniques[technique], **kwargs.get('kwargs'))
                     else:
                         self.__run_technique(self.__loaded_techniques[technique])
@@ -239,7 +277,12 @@ class AtomicOperator(Base):
         elif 'All' in self._techniques:
             # process all techniques
             for key,val in self.__loaded_techniques.items():
-                if kwargs.get('kwargs'):
+                if return_atomics:
+                    __return_atomics.append(val)
+                elif kwargs.get('kwargs'):
                     self.__run_technique(val, **kwargs.get('kwargs'))
                 else:
                     self.__run_technique(val)
+        if return_atomics and __return_atomics:
+            return __return_atomics
+        return self.__test_responses
