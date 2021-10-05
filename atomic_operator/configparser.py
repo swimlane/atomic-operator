@@ -7,17 +7,7 @@ from rudder import Host, Runner
 
 class ConfigParser(Base):
 
-    def __init__(self, config_file: str):
-        """Parses a provide path to a configuration data file (yaml).
-
-        Args:
-            config_file (str): A path to a valid config_file.
-
-        Raises:
-            FileNotFoundError: Raises if provided a config_file path that does not exist
-            MalformedFile: Raises if the provided config file does not meet the defined format
-        """
-        self.config = self.__load_config(config_file)
+    __config_file = None
 
     def __load_config(self, config_file):
         if not os.path.exists(config_file):
@@ -33,25 +23,55 @@ class ConfigParser(Base):
         for host in inventory.get('hosts'):
             inputs = inventory['authentication']
             host_list.append(
-                Host(
+                self.create_remote_host_object(
                     hostname=host,
                     username=inputs['username'] if inputs.get('username') else None,
                     password=inputs['password'] if inputs.get('password') else None,
                     ssh_key_path=inputs['ssh_key_path'] if inputs.get('ssh_key_path') else None,
+                    private_key_string=inputs['private_key_string'] if inputs.get('private_key_string') else None,
                     verify_ssl=inputs['verify_ssl'] if inputs.get('verify_ssl') else False,
-                    port=inputs['port'] if inputs.get('port') else 22,
-                    timeout=inputs['timeout'] if inputs.get('timeout') else 5
+                    ssh_port=inputs['port'] if inputs.get('port') else 22,
+                    ssh_timeout=inputs['timeout'] if inputs.get('timeout') else 5
                 )
             )
         return host_list
 
-    def is_defined(self, guid: str) -> bool:
+    @property
+    def config_file(self):
+        return self.__config_file
+
+    @config_file.setter
+    def config_file(self, value):
+        if value:
+            self.__config_file = self.__load_config(value)
+
+    def create_remote_host_object(self, 
+        hostname=None,
+        username=None,
+        password=None,
+        ssh_key_path=None,
+        private_key_string=None,
+        verify_ssl=False,
+        ssh_port=22,
+        ssh_timeout=5):
+            return Host(
+                hostname=hostname,
+                username=username,
+                password=password,
+                ssh_key_path=ssh_key_path,
+                private_key_string=private_key_string,
+                verify_ssl=verify_ssl,
+                port=ssh_port,
+                timeout=ssh_timeout
+            )
+
+    def is_defined(self, guid: str):
         for item in self.config['atomic_tests']:
             if item['guid'] == guid:
                 return True
         return False
 
-    def get_inputs(self, guid: str) -> dict: 
+    def get_inputs(self, guid: str): 
         """Retrieves any defined inputs for a given atomic test GUID
 
         Args:
@@ -65,7 +85,7 @@ class ConfigParser(Base):
                 return item.get('input_arguments', {})
         return {}
 
-    def get_inventory(self, guid: str) -> list:
+    def get_inventory(self, guid: str):
         """Retrieves a list of Runner objects based on a Atomic Test GUID
 
         Args:
