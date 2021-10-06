@@ -3,11 +3,14 @@ from rudder import Host, Runner
 
 from .base import Base
 from .config import Config
-from .parser import ConfigParser
+from .configparser import ConfigParser
 from .atomic.loader import Loader
 from .utils.exceptions import AtomicsFolderNotFound
-from .execution.localrunner import LocalRunner
-from .execution.remoterunner import RemoteRunner
+from .execution import (
+    LocalRunner,
+    RemoteRunner,
+    AWSRunner
+)
 
 
 class AtomicOperator(Base):
@@ -73,7 +76,14 @@ class AtomicOperator(Base):
         else:
             self.show_details(output_string)
 
+    def __check_if_aws(self, test):
+        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+            return True
+        return False
+
     def __check_platform(self, test, show_output=False) -> bool:
+        if self.__check_if_aws(test):
+            return True
         if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
             self.__show_unsupported_platform(test, show_output=show_output)
             return False
@@ -120,9 +130,14 @@ class AtomicOperator(Base):
                             RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')]).run()
                         )
                 else:
-                    self.__test_responses[test.auto_generated_guid].update(
-                        LocalRunner(test, technique.path).run()
-                    )
+                    if self.__check_if_aws(test):
+                        self.__test_responses[test.auto_generated_guid].update(
+                            AWSRunner(test, technique.path).run()
+                        )
+                    else:
+                        self.__test_responses[test.auto_generated_guid].update(
+                            LocalRunner(test, technique.path).run()
+                        )
 
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.

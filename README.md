@@ -9,7 +9,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.1.0 ([What's new?](release-notes.md))
+> Current Version: v0.2.0 ([What's new?](release-notes.md))
 
 ## Why?
 
@@ -25,6 +25,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 ## Features
 
 * Support local and remote execution of Atomic Red Teams tests on Windows, macOS, and Linux systems
+* Supports running atomic-tests against `iaas:aws`
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
 * Can be automated further based on a configuration file
