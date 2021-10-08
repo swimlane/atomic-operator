@@ -59,7 +59,6 @@ pyyaml==5.4.1
 fire==0.4.0
 requests==2.26.0
 attrs==21.2.0
-rudder==0.2.0
 ```
 
 ### macOS, Linux and Windows:
