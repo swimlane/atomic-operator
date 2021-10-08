@@ -1,4 +1,3 @@
-from rudder import Rudder
 from .runner import Runner
 
 
