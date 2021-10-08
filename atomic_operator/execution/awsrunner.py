@@ -22,8 +22,7 @@ class AWSRunner(Runner):
         response = self.execute_process(command='aws --version', executor=self._get_executor_command(), cwd=os.getcwd())
         if response and response.get('error'):
             self.__logger.warning(response['error'])
-            return False
-        return True
+        return response
 
     def execute_process(self, command, executor=None, host=None, cwd=None):
         """Executes commands using subprocess
@@ -76,5 +75,7 @@ class AWSRunner(Runner):
         return __executor
 
     def run(self):
-        if self.__check_for_aws_cli():
+        response = self.__check_for_aws_cli()
+        if not response.get('error'):
             return self.execute(executor=self._get_executor_command())
+        return response
