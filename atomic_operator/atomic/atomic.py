@@ -1,5 +1,6 @@
 import typing
 from .atomictest import AtomicTest
+from ..models import Host
 import attr
 
 
@@ -13,6 +14,7 @@ class Atomic:
     display_name                          = attr.ib()
     path                                  = attr.ib()
     atomic_tests: typing.List[AtomicTest] = attr.ib()
+    hosts: typing.List[Host]              = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         if self.atomic_tests:
