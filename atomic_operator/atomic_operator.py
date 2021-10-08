@@ -1,8 +1,10 @@
 import os
-from rudder import Host, Runner
 
 from .base import Base
-from .config import Config
+from .models import (
+    Config,
+    Host
+)
 from .configparser import ConfigParser
 from .atomic.loader import Loader
 from .utils.exceptions import AtomicsFolderNotFound
@@ -11,6 +13,7 @@ from .execution import (
     RemoteRunner,
     AWSRunner
 )
+from atomic_operator import execution
 
 
 class AtomicOperator(Base):
@@ -58,6 +61,7 @@ class AtomicOperator(Base):
     """
 
     __test_responses = {}
+    __run_list = []
 
     def __find_path(self, value):
         if value == os.getcwd():
@@ -97,39 +101,30 @@ class AtomicOperator(Base):
             if Base.CONFIG.prompt_for_input_args:
                 for input in test.input_arguments:
                     args_dict[input.name] = self.prompt_user_for_input(test.name, input)
-            if self.config_file:
-                if self.config_file.is_defined(test.auto_generated_guid):
-                    if self.__check_platform(test, show_output=True):
-                        args_dict.update(self.config_file.get_inputs(test.auto_generated_guid))
-                        __should_run_test = True
-            if self.__test_guids and test.auto_generated_guid in self.__test_guids:
-                if self.__check_platform(test, show_output=True):
-                    __should_run_test = True
-            if not self.config_file and not self.__test_guids:
-                if self.__check_platform(test):
-                    __should_run_test = True
-            if __should_run_test:
-                test.set_command_inputs(**args_dict)
-                self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                self.show_details(f"Description: {test.description}")
-                if test.auto_generated_guid not in self.__test_responses:
-                    self.__test_responses[test.auto_generated_guid] = {}
-                if self.config_file:
-                    remote_config = self.config_file.get_inventory(test.auto_generated_guid)
-                    if remote_config:
+            if test.auto_generated_guid not in self.__test_responses:
+                self.__test_responses[test.auto_generated_guid] = {}
+            if technique.hosts:
+                for host in technique.hosts:
+                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
+                    self.show_details(f"Description: {test.description}")
+                    if test.executor.name in ['sh', 'bash']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, remote_config).run()
+                            RemoteRunner(test, technique.path).run(host=host, executor='ssh')
                         )
-                elif self.__remote_hosts:
-                    if 'macos' in test.supported_platforms or 'linux' in test.supported_platforms:
+                    elif test.executor.name in ['command_prompt']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor='ssh', command='')]).run()
+                            RemoteRunner(test, technique.path).run(host=host, executor='cmd')
+                        )
+                    elif test.executor.name in ['powershell']:
+                        self.__test_responses[test.auto_generated_guid].update(
+                            RemoteRunner(test, technique.path).run(host=host, executor='powershell')
                         )
                     else:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, [Runner(hosts=self.__remote_hosts, executor=test.executor.name, command='')]).run()
-                        )
-                else:
+                        self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
+            else:
+                if self.__check_platform(test, show_output=True):
+                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
+                    self.show_details(f"Description: {test.description}")
                     if self.__check_if_aws(test):
                         self.__test_responses[test.auto_generated_guid].update(
                             AWSRunner(test, technique.path).run()
@@ -139,6 +134,36 @@ class AtomicOperator(Base):
                             LocalRunner(test, technique.path).run()
                         )
 
+    def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
+        __run_list = []
+        self.__loaded_techniques = Loader().load_techniques()
+        if test_guids:
+            for key,val in self.__loaded_techniques.items():
+                test_list = []
+                for test in val.atomic_tests:
+                    if test.auto_generated_guid in test_guids:
+                        test_list.append(test)
+                if test_list:
+                    temp = self.__loaded_techniques[key]
+                    temp.atomic_tests = test_list
+                    temp.hosts = host_list
+                    __run_list.append(temp)
+        if techniques:
+            if 'all' not in techniques:
+                for technique in techniques:
+                    if self.__loaded_techniques.get(technique):
+                        temp = self.__loaded_techniques[technique]
+                        temp.hosts = host_list
+                        __run_list.append(temp)
+            elif 'all' in techniques:
+                for key,val in self.__loaded_techniques.items():
+                    temp = self.__loaded_techniques[key]
+                    temp.hosts = host_list
+                    __run_list.append(temp)
+            else:
+                pass
+        return __run_list
+    
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
 
@@ -154,35 +179,9 @@ class AtomicOperator(Base):
         folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
         return os.path.join(desintation, folder_name)
 
-    def __create_remote_host_object(self, 
-        hosts=[],
-        username=None,
-        password=None,
-        ssh_key_path=None,
-        private_key_string=None,
-        verify_ssl=False,
-        ssh_port=22,
-        ssh_timeout=5):
-            return_list = []
-            if hosts:
-                for host in hosts:
-                    return_list.append(
-                        Host(
-                            hostname=host,
-                            username=username,
-                            password=password,
-                            ssh_key_path=ssh_key_path,
-                            private_key_string=private_key_string,
-                            verify_ssl=verify_ssl,
-                            port=ssh_port,
-                            timeout=ssh_timeout
-                        )
-                    )
-            return return_list
-
     def run(
         self, 
-        techniques: list=['All'], 
+        techniques: list=['all'], 
         test_guids: list=[],
         atomics_path=os.getcwd(), 
         check_dependencies=False, 
@@ -205,7 +204,7 @@ class AtomicOperator(Base):
         """The main method in which we run Atomic Red Team tests.
 
         Args:
-            techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'All'.
+            techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'all'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
@@ -229,25 +228,6 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
-        if not isinstance(techniques, list):
-            self._techniques = [t.strip() for t in techniques.split(',')]
-        else:
-            self._techniques = techniques
-        if not isinstance(test_guids, list):
-            self.__test_guids = set([t.strip() for t in test_guids.split(',')])
-        else:
-            self.__test_guids = set(test_guids)
-        self.config_file = ConfigParser(config_file=config_file) if config_file else None
-        self.__test_guids = list(self.__test_guids)
-        self.__remote_hosts = self.__create_remote_host_object(
-            hosts=hosts, 
-            username=username, 
-            password=password, 
-            ssh_key_path=ssh_key_path, 
-            verify_ssl=verify_ssl,
-            private_key_string=private_key_string,
-            ssh_port=ssh_port,
-            ssh_timeout=ssh_timeout)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
@@ -258,31 +238,43 @@ class AtomicOperator(Base):
             cleanup               = cleanup,
             command_timeout       = command_timeout,
             show_details          = show_details,
-            prompt_for_input_args = prompt_for_input_args
+            prompt_for_input_args = prompt_for_input_args,
         )
-        self.__loaded_techniques = Loader().load_techniques()
+        self.config_parser = ConfigParser(config_file=config_file)
+        if self.config_parser.config:
+            for key,val in self.config_parser.config.items():
+                self.__run_list.extend(self.__build_run_list(
+                    test_guids=[key],
+                    host_list=val
+                ))
+        host_list = []
+        if hosts:
+            for host in self.parse_input_lists(hosts):
+                host_list.append(self.config_parser.create_remote_host_object(
+                    hostname=host,
+                    username=username,
+                    password=password,
+                    ssh_key_path=ssh_key_path,
+                    private_key_string=private_key_string,
+                    verify_ssl=verify_ssl,
+                    ssh_port=ssh_port,
+                    ssh_timeout=ssh_timeout
+                ))
         __return_atomics = []
-        if 'All' not in self._techniques:
-            for technique in self._techniques:
-                if self.__loaded_techniques.get(technique):
-                    if return_atomics:
-                        __return_atomics.append(self.__loaded_techniques[technique])
-                    elif kwargs.get('kwargs'):
-                        self.__run_technique(self.__loaded_techniques[technique], **kwargs.get('kwargs'))
-                    else:
-                        self.__run_technique(self.__loaded_techniques[technique])
-                    pass
-                else:
-                    raise ValueError(f"Unable to find technique {technique}")
-        elif 'All' in self._techniques:
-            # process all techniques
-            for key,val in self.__loaded_techniques.items():
-                if return_atomics:
-                    __return_atomics.append(val)
-                elif kwargs.get('kwargs'):
-                    self.__run_technique(val, **kwargs.get('kwargs'))
-                else:
-                    self.__run_technique(val)
+        self.__run_list.extend(
+            self.__build_run_list(
+                techniques=self.parse_input_lists(techniques),
+                test_guids=self.parse_input_lists(test_guids),
+                host_list=host_list
+            )
+        )
+        for item in self.__run_list:
+            if return_atomics:
+                __return_atomics.append(item)
+            elif kwargs.get('kwargs'):
+                self.__run_technique(item, **kwargs.get('kwargs'))
+            else:
+                self.__run_technique(item)
         if return_atomics and __return_atomics:
             return __return_atomics
         return self.__test_responses
