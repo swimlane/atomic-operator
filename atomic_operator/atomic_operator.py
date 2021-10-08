@@ -155,7 +155,7 @@ class AtomicOperator(Base):
                         temp = self.__loaded_techniques[technique]
                         temp.hosts = host_list
                         __run_list.append(temp)
-            elif 'all' in techniques:
+            elif 'all' in techniques and not test_guids:
                 for key,val in self.__loaded_techniques.items():
                     temp = self.__loaded_techniques[key]
                     temp.hosts = host_list
