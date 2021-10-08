@@ -146,10 +146,8 @@ class ConfigParser(Base):
             return None
 
     def is_defined(self, guid: str):
-        if self.config_file:
-            for item in self.config_file['atomic_tests']:
-                if item['guid'] == guid:
-                    return True
+        if self.config and guid in self.config:
+            return True
         return False
 
     def get_inputs(self, guid: str): 
