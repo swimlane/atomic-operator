@@ -1,5 +1,6 @@
 import os
 import attr
+from .base import Base
 from .utils.exceptions import AtomicsFolderNotFound
 
 
@@ -32,3 +33,21 @@ class Config:
         value = self.__get_abs_path(value)
         if not os.path.exists(value):
             raise AtomicsFolderNotFound('Please provide a value for atomics_path that exists')
+
+
+@attr.s
+class Host:
+
+    hostname           = attr.ib(type=str)
+    username           = attr.ib(default=None, type=str)
+    password           = attr.ib(default=None, type=str)
+    verify_ssl         = attr.ib(default=False, type=bool)
+    ssh_key_path       = attr.ib(default=None, type=str)
+    private_key_string = attr.ib(default=None, type=str)
+    port               = attr.ib(default=22, type=int)
+    timeout            = attr.ib(default=5, type=int)
+
+    @ssh_key_path.validator
+    def validate_ssh_key_path(self, attribute, value):
+        if value:
+            Base.get_abs_path(value)
