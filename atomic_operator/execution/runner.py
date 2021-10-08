@@ -77,8 +77,6 @@ class Runner(Base):
         """
         return_dict = {}
         self.show_details(f"Using {executor} as executor.")
-        if host and not isinstance(host, list):
-            host = [host]
         if executor:
             if Runner.CONFIG.check_dependencies and self.test.dependencies:
                 return_dict.update(self._run_dependencies(host=host, executor=executor))
