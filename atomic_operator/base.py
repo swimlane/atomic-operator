@@ -1,12 +1,9 @@
 import os
-import re
 import sys
 import zipfile
 from io import BytesIO
 import platform
-import subprocess
 import requests
-from .config import Config
 from .utils.logger import LoggingBase
 
 
@@ -94,3 +91,11 @@ Inputs for {title}:
         if bool(value):
             return value
         return input_object.default
+
+    def parse_input_lists(self, value):
+        value_list = None
+        if not isinstance(value, list):
+            value_list = set([t.strip() for t in value.split(',')])
+        else:
+            value_list = set(value)
+        return list(value_list)
