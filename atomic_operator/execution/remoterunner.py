@@ -33,6 +33,15 @@ class RemoteRunner(Runner):
             executor (str): An executor that can be passed to state machine. Defaults to None.
             host (str): A host to run remote commands on. Defaults to None.
         """
+        # Formatting commands based on inputs
+        if self.test.input_arguments:
+            if self.CONFIG.copy_source_files:
+                # copy any related source files defined within the input_arguments
+                # of a test to the remote host
+                for input_argument in self.test.input_arguments:
+                    if 'PathToAtomicsFolder' in input_argument.default or '$PathToAtomicsFolder' in input_argument.default:
+                        input_argument.source = self._replace_command_string(input_argument.default, self.CONFIG.atomics_path)
+                        input_argument.destination = self._replace_command_string(input_argument.default, '/tmp')
         self.state = CreationState()
         final_state = None
         try:
@@ -43,7 +52,7 @@ class RemoteRunner(Runner):
                     self.state = self.state.on_event(executor, command)
                 if str(self.state) == 'InnvocationState':
                     self.__logger.debug('Running InnvocationState on_event')
-                    self.state = self.state.invoke(host, executor, command)
+                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments)
                 if str(self.state) == 'ParseResultsState':
                     self.__logger.debug('Running ParseResultsState on_event')
                     final_state = self.state.on_event()
