@@ -78,7 +78,7 @@ class Runner(Base):
         return_dict = {}
         self.show_details(f"Using {executor} as executor.")
         if executor:
-            if Runner.CONFIG.check_dependencies and self.test.dependencies:
+            if Base.CONFIG.check_prereqs and self.test.dependencies:
                 return_dict.update(self._run_dependencies(host=host, executor=executor))
             self.show_details("Running command")
             response = self.execute_process(
