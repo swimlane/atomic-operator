@@ -121,30 +121,3 @@ Inputs for {title}:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
         return command
-
-    def format_command_string_with_inputs(self, command, test_name, input_arguments=[], remote=False):
-        if remote:
-            path = '/tmp'
-        else:
-            path = self.CONFIG.atomics_path
-        args_dict = self.CONFIG.kwargs
-        if self.CONFIG.prompt_for_input_args and input_arguments:
-            #Formatting commands based on user input at prompt
-            for input in input_arguments:
-                args_dict[input.name] = self.prompt_user_for_input(test_name, input)
-        if input_arguments:
-            for arguments in input_arguments:
-                if arguments.type.lower() != 'integer':
-                    if args_dict and args_dict.get(arguments.name):
-                        arguments.value = args_dict[arguments.name]
-                    else:
-                        arguments.value = self._replace_command_string(
-                            arguments.default, 
-                            path, 
-                            input_arguments=input_arguments
-                        )
-        return self._replace_command_string(
-            command, 
-            path, 
-            input_arguments=input_arguments
-        )
