@@ -31,6 +31,10 @@ class Base(metaclass=LoggingBase):
             'macos': '/bin/bash'
         }
     }
+    _replacement_strings = [
+        '#{{{0}}}',
+        '${{{0}}}'
+    ]
 
     def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
@@ -99,3 +103,48 @@ Inputs for {title}:
         else:
             value_list = set(value)
         return list(value_list)
+
+    def _replace_command_string(self, command: str, path:str, input_arguments: list=[]):
+        if command:
+            # TODO: Figure out how to handle remote execution of these dependencies (e.g. T1037\\src\\batstartup.bat)
+            try:
+                command = command.replace('$PathToAtomicsFolder', path)
+                command = command.replace('PathToAtomicsFolder', path)
+            except:
+                pass
+            if input_arguments:
+                for input in input_arguments:
+                    for string in self._replacement_strings:
+                        try:
+                            command = command.replace(str(string.format(input.name)), str(input.value))
+                        except:
+                            # catching errors since some inputs are actually integers but defined as strings
+                            pass
+        return command
+
+    def format_command_string_with_inputs(self, command, test_name, input_arguments=[], remote=False):
+        if remote:
+            path = '/tmp'
+        else:
+            path = self.CONFIG.atomics_path
+        args_dict = self.CONFIG.kwargs
+        if self.CONFIG.prompt_for_input_args and input_arguments:
+            #Formatting commands based on user input at prompt
+            for input in input_arguments:
+                args_dict[input.name] = self.prompt_user_for_input(test_name, input)
+        if input_arguments:
+            for arguments in input_arguments:
+                if arguments.type.lower() != 'integer':
+                    if args_dict and args_dict.get(arguments.name):
+                        arguments.value = args_dict[arguments.name]
+                    else:
+                        arguments.value = self._replace_command_string(
+                            arguments.default, 
+                            path, 
+                            input_arguments=input_arguments
+                        )
+        return self._replace_command_string(
+            command, 
+            path, 
+            input_arguments=input_arguments
+        )
