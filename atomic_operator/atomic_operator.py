@@ -197,6 +197,7 @@ class AtomicOperator(Base):
         check_prereqs=False, 
         get_prereqs=False, 
         cleanup=False, 
+        copy_source_files=True,
         command_timeout=20, 
         show_details=False,
         prompt_for_input_args=False,
@@ -220,6 +221,7 @@ class AtomicOperator(Base):
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
+            copy_source_files (bool, optional): Whether or not you want to copy any related source (src, bin, etc.) files to a remote host. Defaults to True.
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
@@ -250,6 +252,7 @@ class AtomicOperator(Base):
             show_details          = show_details,
             prompt_for_input_args = prompt_for_input_args,
             kwargs                = kwargs,
+            copy_source_files     = copy_source_files
         )
         self.config_parser = ConfigParser(config_file=config_file)
         if self.config_parser.config:

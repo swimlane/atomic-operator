@@ -22,6 +22,7 @@ class Config:
     show_details          = attr.ib(default=False)
     prompt_for_input_args = attr.ib(default=False)
     kwargs                = attr.ib(default={})
+    copy_source_files     = attr.ib(default=True)
 
     def __attrs_post_init__(self):
         object.__setattr__(self, 'atomics_path', self.__get_abs_path(self.atomics_path))
