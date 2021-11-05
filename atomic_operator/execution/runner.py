@@ -54,7 +54,7 @@ class Runner(Base):
             executor = self.test.dependency_executor_name
         for dependency in self.test.dependencies:
             self.show_details(f"Dependency description: {dependency.description}")
-            if Base.CONFIG.get_prereqs:
+            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
                 self.show_details(f"Retrieving prerequistes")
                 get_prereq_response = self.execute_process(
                     command=dependency.get_prereq_command,
@@ -62,6 +62,8 @@ class Runner(Base):
                     host=host
                 )
                 for key,val in get_prereq_response.items():
+                    if key not in return_dict:
+                        return_dict[key] = {}
                     return_dict[key].update({'get_prereqs': val})
             response = self.execute_process(
                 command=dependency.prereq_command,
