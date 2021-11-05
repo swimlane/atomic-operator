@@ -93,14 +93,24 @@ class AtomicOperator(Base):
             return False
         return True
 
-    def __run_technique(self, technique, **kwargs) -> None:
+    def __set_input_arguments(self, test, **kwargs):
+        if kwargs:
+            for input in test.input_arguments:
+                for key,val in kwargs.items():
+                    if input.name == key:
+                        input.value = val
+        if Base.CONFIG.prompt_for_input_args:
+            for input in test.input_arguments:
+                input.value = self.prompt_user_for_input(test.name, input)
+        for input in test.input_arguments:
+            if input.value == None:
+                input.value = input.default
+
+    def __run_technique(self, technique, **kwargs):
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
-            __should_run_test = False
-            args_dict = kwargs if kwargs else {}
-            if Base.CONFIG.prompt_for_input_args:
-                for input in test.input_arguments:
-                    args_dict[input.name] = self.prompt_user_for_input(test.name, input)
+            self.__set_input_arguments(test, **kwargs)
+
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
@@ -239,6 +249,7 @@ class AtomicOperator(Base):
             command_timeout       = command_timeout,
             show_details          = show_details,
             prompt_for_input_args = prompt_for_input_args,
+            kwargs                = kwargs,
         )
         self.config_parser = ConfigParser(config_file=config_file)
         if self.config_parser.config:
