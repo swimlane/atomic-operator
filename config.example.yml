@@ -1,7 +1,7 @@
 inventory:
   windows1:
     executor: powershell # or cmd
-    input:
+    authentication:
       username: username
       password: some_passowrd!
       verify_ssl: false
