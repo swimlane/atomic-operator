@@ -65,13 +65,16 @@ class Runner(Base):
                     if key not in return_dict:
                         return_dict[key] = {}
                     return_dict[key].update({'get_prereqs': val})
-            response = self.execute_process(
-                command=dependency.prereq_command,
-                executor=executor,
-                host=host
-            )
-            for key,val in response.items():
-                return_dict[key].update({'prereq_command': val})
+            if Base.CONFIG.check_prereqs and dependency.prereq_command:
+                response = self.execute_process(
+                    command=dependency.prereq_command,
+                    executor=executor,
+                    host=host
+                )
+                for key,val in response.items():
+                    if key not in return_dict:
+                        return_dict[key] = {}
+                    return_dict[key].update({'prereq_command': val})
         return return_dict
 
     def execute(self, host_name='localhost', executor=None, host=None):
