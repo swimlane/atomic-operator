@@ -15,7 +15,7 @@ class Config:
     """
 
     atomics_path          = attr.ib()
-    check_dependencies    = attr.ib(default=False)
+    check_prereqs         = attr.ib(default=False)
     get_prereqs           = attr.ib(default=False)
     cleanup               = attr.ib(default=False)
     command_timeout       = attr.ib(default=20)

@@ -184,7 +184,7 @@ class AtomicOperator(Base):
         techniques: list=['all'], 
         test_guids: list=[],
         atomics_path=os.getcwd(), 
-        check_dependencies=False, 
+        check_prereqs=False, 
         get_prereqs=False, 
         cleanup=False, 
         command_timeout=20, 
@@ -207,7 +207,7 @@ class AtomicOperator(Base):
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'all'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
-            check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
+            check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
@@ -233,7 +233,7 @@ class AtomicOperator(Base):
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
         Base.CONFIG = Config(
             atomics_path          = atomics_path,
-            check_dependencies    = check_dependencies,
+            check_prereqs         = check_prereqs,
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,
             command_timeout       = command_timeout,
