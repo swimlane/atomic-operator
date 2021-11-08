@@ -9,7 +9,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.3.1 ([What's new?](release-notes.md))
+> Current Version: v0.4.0 ([What's new?](release-notes.md))
 
 ## Why?
 
@@ -110,6 +110,8 @@ In order to run a test remotely you must provide some additional properties (and
 # This will run ALL tests compatiable with your local operating system
 atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624" --hosts "10.32.1.0" --username "my_username" --password "my_password"
 ```
+
+> When running commands remotely against Windows hosts you may need to configure PSRemoting. See details here: [Windows Remoting](docs/windows-remote.md)
 
 ### Additional parameters
 
