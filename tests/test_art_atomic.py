@@ -47,11 +47,5 @@ def test_atomic_test_replace_command_strings():
     }
     for test in atomic.atomic_tests:
         if test.name == 'Dump individual process memory with sh (Local)':
-            test.set_command_inputs(**input_arguments)
-            assert f'sh {input_arguments["script_path"]}' in test.executor.command
-            assert f'PID=$(pgrep -n -f "{input_arguments["pid_term"]}")' in test.executor.command
-            assert f'grep -i "PASS" "{input_arguments["output_file"]}"' in test.executor.command
-
-            assert f'rm -f "{input_arguments["output_file"]}"' in test.executor.cleanup_command
             assert test.executor.name == 'sh'
             assert test.executor.elevation_required == True
