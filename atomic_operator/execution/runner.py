@@ -54,7 +54,7 @@ class Runner(Base):
             executor = self.test.dependency_executor_name
         for dependency in self.test.dependencies:
             self.show_details(f"Dependency description: {dependency.description}")
-            if Base.CONFIG.get_prereqs:
+            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
                 self.show_details(f"Retrieving prerequistes")
                 get_prereq_response = self.execute_process(
                     command=dependency.get_prereq_command,
@@ -62,14 +62,19 @@ class Runner(Base):
                     host=host
                 )
                 for key,val in get_prereq_response.items():
+                    if key not in return_dict:
+                        return_dict[key] = {}
                     return_dict[key].update({'get_prereqs': val})
-            response = self.execute_process(
-                command=dependency.prereq_command,
-                executor=executor,
-                host=host
-            )
-            for key,val in response.items():
-                return_dict[key].update({'prereq_command': val})
+            if Base.CONFIG.check_prereqs and dependency.prereq_command:
+                response = self.execute_process(
+                    command=dependency.prereq_command,
+                    executor=executor,
+                    host=host
+                )
+                for key,val in response.items():
+                    if key not in return_dict:
+                        return_dict[key] = {}
+                    return_dict[key].update({'prereq_command': val})
         return return_dict
 
     def execute(self, host_name='localhost', executor=None, host=None):
@@ -78,7 +83,7 @@ class Runner(Base):
         return_dict = {}
         self.show_details(f"Using {executor} as executor.")
         if executor:
-            if Runner.CONFIG.check_dependencies and self.test.dependencies:
+            if Base.CONFIG.check_prereqs and self.test.dependencies:
                 return_dict.update(self._run_dependencies(host=host, executor=executor))
             self.show_details("Running command")
             response = self.execute_process(

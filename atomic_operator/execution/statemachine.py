@@ -1,9 +1,21 @@
-
+import os
 from pypsrp.client import Client
 
 from .runner import Runner
 from ..base import Base
+import logging
 
+
+# This is used to bypass some urllib3 error messages within that package
+class SuppressFilter(logging.Filter):
+    def filter(self, record):
+        return 'wsman' not in record.getMessage()
+
+try:
+    from urllib3.connectionpool import log
+    log.addFilter(SuppressFilter())
+except:
+    pass
 
 
 class State:
@@ -11,6 +23,21 @@ class State:
     We define a state object which provides some utility functions for the
     individual states within the state machine.
     """
+
+    @classmethod
+    def get_remote_executor(cls, executor):
+        if executor == 'command_prompt':
+            return 'cmd'
+        elif executor == 'powershell':
+            return 'powershell'
+        elif executor == 'sh':
+            return 'ssh'
+        elif executor == 'bash':
+            return 'ssh'
+        elif executor == 'manual':
+            return None
+        else:
+            return executor
 
     def on_event(self, event):
         """
@@ -64,6 +91,8 @@ class CreationState(State):
             return self.ssh()
         elif command_type == 'sh':
             return self.ssh()
+        elif command_type == 'bash':
+            return self.ssh()
         return self
 
 
@@ -111,9 +140,13 @@ class InnvocationState(State, Base):
             ssl=hostinfo.verify_ssl
         )
 
-    def __invoke_cmd(self, command):
+    def __invoke_cmd(self, command, input_arguments=None, supporting_files=None):
         if not self.__win_client:
             self.__create_win_client(self.hostinfo)
+        # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
+        self.__copy_supporting_files_on_windows(supporting_files)
+        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
+        # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
         stdout, stderr, rc = self.__win_client.execute_cmd(command)
         # NOTE: rc (return code of process) should equal 0 but we are not adding logic here this is handled int he ParseResultsState class
         if stderr:
@@ -128,9 +161,29 @@ class InnvocationState(State, Base):
             error=stderr
         )
 
-    def __invoke_powershell(self, command):
+    def join_path_regardless_of_separators(self, *paths):
+        return os.path.sep.join(path.rstrip(r"\/") for path in paths)
+
+    def __copy_supporting_files_on_windows(self, supporting_files):
+        if supporting_files:
+            for file in supporting_files:
+                path_list = ['c:/temp']
+                for item in file.split(os.path.dirname(self.test_path))[-1].split('/'):
+                    if item:
+                        path_list.append(item)
+                destination_path = self.join_path_regardless_of_separators(*path_list)
+                output, streams, had_errors = self.__win_client.execute_ps(f"New-Item -Path {os.path.dirname(destination_path)} -ItemType Directory")
+                response = self.__win_client.copy(file, destination_path)
+
+    def __invoke_powershell(self, command, input_arguments=None, supporting_files=None):
         if not self.__win_client:
             self.__create_win_client(self.hostinfo)
+
+        # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
+        self.__copy_supporting_files_on_windows(supporting_files)
+        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
+        # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
+
         output, streams, had_errors = self.__win_client.execute_ps(command)
         if not output:
             output = self.__handle_windows_errors(streams)
@@ -146,7 +199,26 @@ class InnvocationState(State, Base):
             error=self.__handle_windows_errors(streams)
         )
 
-    def __invoke_ssh(self,command):
+    def traverse_supporting_files_directory(self, directory, destination, ssh):
+        return_list = []
+        for dirpath, dirnames, files in os.walk(directory):
+            if files:
+                for file in files:
+                    if file.endswith('.yaml') or file.endswith('.md'):
+                        continue
+                    if '/' in dirpath:
+                        full_path = f"{dirpath}/{file}"
+                        new_destination = f"{destination}/{file}"
+                    else:
+                        full_path = f"{dirpath}\{file}"
+                        new_destination = f"{destination}\{file}"
+                    command = "sh -c '" + f'file="{new_destination}"' + ' && mkdir -p "${file%/*}" && cat > "${file}"' + "'"
+                    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+                    ssh_stdin.write(open(f'{full_path}', 'r').read())
+                    return_list.append(full_path)
+        return return_list
+
+    def __invoke_ssh(self, command, input_arguments=None, supporting_files=None):
         import paramiko
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -175,6 +247,34 @@ class InnvocationState(State, Base):
         else:
             raise AttributeError('Please provide either a ssh_key_path or a password')
         out = None
+        from ..base import Base
+        base = Base()
+        if input_arguments:
+            for argument in input_arguments:
+                if argument.source and argument.destination:
+                    if os.path.exists(argument.source):
+                        if os.path.isdir(argument.source):
+                            self.traverse_supporting_files_directory(argument.source, argument.destination, ssh)
+                            argument.value = argument.destination
+                        else:
+                            argument.value = base._replace_command_string(
+                                argument.default, 
+                                path='/tmp',
+                                input_arguments=input_arguments
+                            )
+                    else:
+                        argument.value = base._replace_command_string(
+                            argument.default, 
+                            path='/tmp',
+                            input_arguments=input_arguments
+                        )
+                else:
+                    argument.value = base._replace_command_string(
+                        argument.default, 
+                        path='/tmp',
+                        input_arguments=input_arguments
+                    )
+        command = base._replace_command_string(command=command, path='/tmp', input_arguments=input_arguments)
         ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
         return_code = ssh_stdout.channel.recv_exit_status()
         out = ssh_stdout.read()
@@ -188,14 +288,17 @@ class InnvocationState(State, Base):
             error=err
         )
 
-    def invoke(self, hostinfo, command_type, command):
+    def invoke(self, hostinfo, command_type, command, input_arguments=None, supporting_files=None, test_path=None):
+        self.test_path = test_path
         self.hostinfo = hostinfo
+        command_type = self.get_remote_executor(command_type)
+        result = None
         if command_type == 'powershell':
-            result = self.__invoke_powershell(command)
+            result = self.__invoke_powershell(command, input_arguments=input_arguments, supporting_files=supporting_files)
         elif command_type == 'cmd':
-            result = self.__invoke_cmd(command)
+            result = self.__invoke_cmd(command, input_arguments=input_arguments, supporting_files=supporting_files)
         elif command_type == 'ssh':
-            result = self.__invoke_ssh(command)
+            result = self.__invoke_ssh(command, input_arguments=input_arguments, supporting_files=supporting_files)
         return result
 
 

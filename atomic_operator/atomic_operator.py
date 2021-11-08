@@ -93,14 +93,24 @@ class AtomicOperator(Base):
             return False
         return True
 
-    def __run_technique(self, technique, **kwargs) -> None:
+    def __set_input_arguments(self, test, **kwargs):
+        if kwargs:
+            for input in test.input_arguments:
+                for key,val in kwargs.items():
+                    if input.name == key:
+                        input.value = val
+        if Base.CONFIG.prompt_for_input_args:
+            for input in test.input_arguments:
+                input.value = self.prompt_user_for_input(test.name, input)
+        for input in test.input_arguments:
+            if input.value == None:
+                input.value = input.default
+
+    def __run_technique(self, technique, **kwargs):
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
-            __should_run_test = False
-            args_dict = kwargs if kwargs else {}
-            if Base.CONFIG.prompt_for_input_args:
-                for input in test.input_arguments:
-                    args_dict[input.name] = self.prompt_user_for_input(test.name, input)
+            self.__set_input_arguments(test, **kwargs)
+
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
@@ -109,15 +119,15 @@ class AtomicOperator(Base):
                     self.show_details(f"Description: {test.description}")
                     if test.executor.name in ['sh', 'bash']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).run(host=host, executor='ssh')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='ssh')
                         )
                     elif test.executor.name in ['command_prompt']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).run(host=host, executor='cmd')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='cmd')
                         )
                     elif test.executor.name in ['powershell']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).run(host=host, executor='powershell')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='powershell')
                         )
                     else:
                         self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
@@ -184,9 +194,10 @@ class AtomicOperator(Base):
         techniques: list=['all'], 
         test_guids: list=[],
         atomics_path=os.getcwd(), 
-        check_dependencies=False, 
+        check_prereqs=False, 
         get_prereqs=False, 
         cleanup=False, 
+        copy_source_files=True,
         command_timeout=20, 
         show_details=False,
         prompt_for_input_args=False,
@@ -207,9 +218,10 @@ class AtomicOperator(Base):
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'all'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
-            check_dependencies (bool, optional): Whether or not to check for dependencies. Defaults to False.
+            check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
+            copy_source_files (bool, optional): Whether or not you want to copy any related source (src, bin, etc.) files to a remote host. Defaults to True.
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
@@ -233,12 +245,14 @@ class AtomicOperator(Base):
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
         Base.CONFIG = Config(
             atomics_path          = atomics_path,
-            check_dependencies    = check_dependencies,
+            check_prereqs         = check_prereqs,
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,
             command_timeout       = command_timeout,
             show_details          = show_details,
             prompt_for_input_args = prompt_for_input_args,
+            kwargs                = kwargs,
+            copy_source_files     = copy_source_files
         )
         self.config_parser = ConfigParser(config_file=config_file)
         if self.config_parser.config:
