@@ -13,7 +13,6 @@ from .execution import (
     RemoteRunner,
     AWSRunner
 )
-from atomic_operator import execution
 
 
 class AtomicOperator(Base):
@@ -64,14 +63,22 @@ class AtomicOperator(Base):
     __run_list = []
 
     def __find_path(self, value):
+        """Attempts to find a path containing the atomic-red-team repository
+
+        Args:
+            value (str): A starting path to iterate through
+
+        Returns:
+            str: An absolute path containing the path to the atomic-red-team repo
+        """
         if value == os.getcwd():
             for x in os.listdir(value):
                 if os.path.isdir(x) and 'redcanaryco-atomic-red-team' in x:
-                    if os.path.exists(Base().get_abs_path(os.path.join(x, 'atomics'))):
-                        return Base().get_abs_path(os.path.join(x, 'atomics'))
+                    if os.path.exists(self.get_abs_path(os.path.join(x, 'atomics'))):
+                        return self.get_abs_path(os.path.join(x, 'atomics'))
         else:
-            if os.path.exists(Base().get_abs_path(value)):
-                return Base().get_abs_path(value)
+            if os.path.exists(self.get_abs_path(value)):
+                return self.get_abs_path(value)
 
     def __show_unsupported_platform(self, test, show_output=False) -> None:
         output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
@@ -143,6 +150,11 @@ class AtomicOperator(Base):
                         self.__test_responses[test.auto_generated_guid].update(
                             LocalRunner(test, technique.path).run()
                         )
+            if self.__test_responses.get(test.auto_generated_guid):
+                self.__test_responses[test.auto_generated_guid].update({
+                    'technique_id': technique.attack_technique,
+                    'technique_name': technique.display_name
+                })
 
     def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
         __run_list = []
