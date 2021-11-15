@@ -101,17 +101,18 @@ class AtomicOperator(Base):
         return True
 
     def __set_input_arguments(self, test, **kwargs):
-        if kwargs:
+        if test.input_arguments:
+            if kwargs:
+                for input in test.input_arguments:
+                    for key,val in kwargs.items():
+                        if input.name == key:
+                            input.value = val
+            if Base.CONFIG.prompt_for_input_args:
+                for input in test.input_arguments:
+                    input.value = self.prompt_user_for_input(test.name, input)
             for input in test.input_arguments:
-                for key,val in kwargs.items():
-                    if input.name == key:
-                        input.value = val
-        if Base.CONFIG.prompt_for_input_args:
-            for input in test.input_arguments:
-                input.value = self.prompt_user_for_input(test.name, input)
-        for input in test.input_arguments:
-            if input.value == None:
-                input.value = input.default
+                if input.value == None:
+                    input.value = input.default
 
     def __run_technique(self, technique, **kwargs):
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
