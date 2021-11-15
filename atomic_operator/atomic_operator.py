@@ -87,8 +87,7 @@ class AtomicOperator(Base):
         """
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
-            self.__set_input_arguments(test, **kwargs)
-
+            self._set_input_arguments(test, **kwargs)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
@@ -110,10 +109,10 @@ class AtomicOperator(Base):
                     else:
                         self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
             else:
-                if self.__check_platform(test, show_output=True):
+                if self._check_platform(test, show_output=True):
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.show_details(f"Description: {test.description}")
-                    if self.__check_if_aws(test):
+                    if self._check_if_aws(test):
                         self.__test_responses[test.auto_generated_guid].update(
                             AWSRunner(test, technique.path).run()
                         )
