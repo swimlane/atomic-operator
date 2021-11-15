@@ -96,15 +96,15 @@ class AtomicOperator(Base):
                     self.show_details(f"Description: {test.description}")
                     if test.executor.name in ['sh', 'bash']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='ssh')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='ssh')
                         )
                     elif test.executor.name in ['command_prompt']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='cmd')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='cmd')
                         )
                     elif test.executor.name in ['powershell']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).run(host=host, executor='powershell')
+                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='powershell')
                         )
                     else:
                         self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
@@ -114,11 +114,11 @@ class AtomicOperator(Base):
                     self.show_details(f"Description: {test.description}")
                     if self._check_if_aws(test):
                         self.__test_responses[test.auto_generated_guid].update(
-                            AWSRunner(test, technique.path).run()
+                            AWSRunner(test, technique.path).start()
                         )
                     else:
                         self.__test_responses[test.auto_generated_guid].update(
-                            LocalRunner(test, technique.path).run()
+                            LocalRunner(test, technique.path).start()
                         )
             if self.__test_responses.get(test.auto_generated_guid):
                 self.__test_responses[test.auto_generated_guid].update({
