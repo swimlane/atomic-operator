@@ -78,41 +78,14 @@ class AtomicOperator(Base):
             if os.path.exists(self.get_abs_path(value)):
                 return self.get_abs_path(value)
 
-    def __show_unsupported_platform(self, test, show_output=False) -> None:
-        output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
-        if show_output:
-            self.__logger.warning(output_string)
-        else:
-            self.show_details(output_string)
-
-    def __check_if_aws(self, test):
-        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
-            return True
-        return False
-
-    def __check_platform(self, test, show_output=False) -> bool:
-        if self.__check_if_aws(test):
-            return True
-        if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            self.__show_unsupported_platform(test, show_output=show_output)
-            return False
-        return True
-
-    def __set_input_arguments(self, test, **kwargs):
-        if test.input_arguments:
-            if kwargs:
-                for input in test.input_arguments:
-                    for key,val in kwargs.items():
-                        if input.name == key:
-                            input.value = val
-            if Base.CONFIG.prompt_for_input_args:
-                for input in test.input_arguments:
-                    input.value = self.prompt_user_for_input(test.name, input)
-            for input in test.input_arguments:
-                if input.value == None:
-                    input.value = input.default
-
     def __run_technique(self, technique, **kwargs):
+        """This method is used to run defined Atomic tests within 
+           a MITRE ATT&CK Technique.
+
+        Args:
+            technique (Atomic): An Atomic object which contains a list of AtomicTest
+                                objects.
+        """
         self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             self.__set_input_arguments(test, **kwargs)
@@ -155,36 +128,6 @@ class AtomicOperator(Base):
                     'technique_name': technique.display_name
                 })
 
-    def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
-        __run_list = []
-        self.__loaded_techniques = Loader().load_techniques()
-        if test_guids:
-            for key,val in self.__loaded_techniques.items():
-                test_list = []
-                for test in val.atomic_tests:
-                    if test.auto_generated_guid in test_guids:
-                        test_list.append(test)
-                if test_list:
-                    temp = self.__loaded_techniques[key]
-                    temp.atomic_tests = test_list
-                    temp.hosts = host_list
-                    __run_list.append(temp)
-        if techniques:
-            if 'all' not in techniques:
-                for technique in techniques:
-                    if self.__loaded_techniques.get(technique):
-                        temp = self.__loaded_techniques[technique]
-                        temp.hosts = host_list
-                        __run_list.append(temp)
-            elif 'all' in techniques and not test_guids:
-                for key,val in self.__loaded_techniques.items():
-                    temp = self.__loaded_techniques[key]
-                    temp.hosts = host_list
-                    __run_list.append(temp)
-            else:
-                pass
-        return __run_list
-    
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
 
@@ -265,34 +208,24 @@ class AtomicOperator(Base):
             kwargs                = kwargs,
             copy_source_files     = copy_source_files
         )
-        self.config_parser = ConfigParser(config_file=config_file)
-        if self.config_parser.config:
-            for key,val in self.config_parser.config.items():
-                self.__run_list.extend(self.__build_run_list(
-                    test_guids=[key],
-                    host_list=val
-                ))
-        host_list = []
-        if hosts:
-            for host in self.parse_input_lists(hosts):
-                host_list.append(self.config_parser.create_remote_host_object(
-                    hostname=host,
-                    username=username,
-                    password=password,
-                    ssh_key_path=ssh_key_path,
-                    private_key_string=private_key_string,
-                    verify_ssl=verify_ssl,
-                    ssh_port=ssh_port,
-                    ssh_timeout=ssh_timeout
-                ))
-        __return_atomics = []
-        self.__run_list.extend(
-            self.__build_run_list(
+        # taking inputs from both config_file and passed in values via command
+        # line to build a run_list of objects
+        self.__config_parser = ConfigParser(
+                config_file=config_file,
                 techniques=self.parse_input_lists(techniques),
                 test_guids=self.parse_input_lists(test_guids),
-                host_list=host_list
+                host_list=self.parse_input_lists(hosts),
+                username=username,
+                password=password,
+                ssh_key_path=ssh_key_path,
+                private_key_string=private_key_string,
+                verify_ssl=verify_ssl,
+                ssh_port=ssh_port,
+                ssh_timeout=ssh_timeout
             )
-        )
+        self.__run_list = self.__config_parser.run_list
+
+        __return_atomics = []
         for item in self.__run_list:
             if return_atomics:
                 __return_atomics.append(item)
