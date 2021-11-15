@@ -2,11 +2,9 @@ import os
 
 from .base import Base
 from .models import (
-    Config,
-    Host
+    Config
 )
 from .configparser import ConfigParser
-from .atomic.loader import Loader
 from .utils.exceptions import AtomicsFolderNotFound
 from .execution import (
     LocalRunner,
