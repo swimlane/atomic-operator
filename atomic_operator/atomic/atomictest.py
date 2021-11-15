@@ -1,8 +1,6 @@
 import typing
 import attr
 
-from ..base import Base
-
 
 @attr.s
 class AtomicTestInput:

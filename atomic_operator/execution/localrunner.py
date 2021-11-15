@@ -69,5 +69,5 @@ class LocalRunner(Runner):
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
-    def run(self):
+    def start(self):
         return self.execute(executor=self._get_executor_command())

@@ -105,7 +105,7 @@ class Runner(Base):
         return {host_name: return_dict}
 
     @abc.abstractmethod
-    def run(self):
+    def start(self):
         raise NotImplementedError
 
     @abc.abstractmethod

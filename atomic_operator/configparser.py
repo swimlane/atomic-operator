@@ -2,34 +2,104 @@ import os
 from .base import Base
 from .utils.exceptions import MalformedFile
 from .models import Host
+from .atomic.loader import Loader
 
 
 class ConfigParser(Base):
 
-    __test_config = {}
+    __run_list = []
 
-    def __init__(self, config_file=None):
-        if config_file:
-            self.config_file = self.__load_config(config_file)
-            self.__parse_test_guids()
-        else:
-            self.config_file = None
+    def __init__(self, config_file=None, techniques=None, test_guids=None, 
+                       host_list=None, username=None, password=None,
+                       ssh_key_path=None, private_key_string=None, verify_ssl=False,
+                       ssh_port=22, ssh_timeout=5
+                ):
+        """Parses a provided config file as well as parameters to build a run list
+        
+        This list combines Atomics and potentially filters 
+        tests defined within that Atomic object based on passed
+        in parameters and config_file.
+
+        Additionally, a list of Host objects are added to their
+        defined techniques or test_guids based on config and/or
+        passed in parameters.
+
+        Example: Example structure returned from provided values
+        [
+            Atomic(
+                attack_technique='T1016', 
+                display_name='System Network Configuration Discovery', 
+                path='/Users/josh.rickard/_Swimlane2/atomic-operator/redcanaryco-atomic-red-team-22dd2fb/atomics/T1016', 
+                atomic_tests=[
+                    AtomicTest(
+                        name='System Network Configuration Discovery', 
+                        description='Identify network configuration information.\n\nUpon successful execution, ...', 
+                        supported_platforms=['macos', 'linux'], 
+                        auto_generated_guid='c141bbdb-7fca-4254-9fd6-f47e79447e17', 
+                        executor=AtomicExecutor(
+                            name='sh', 
+                            command='if [ -x "$(command -v arp)" ]; then arp -a; else echo "arp is missing from ....', 
+                            cleanup_command=None, 
+                            elevation_required=False, steps=None
+                        ), 
+                        input_arguments=None, 
+                        dependency_executor_name=None, 
+                        dependencies=[]
+                    )
+                ], 
+                hosts=[
+                    Host(
+                        hostname='192.168.1.1', 
+                        username='username', 
+                        password='some_passowrd!', 
+                        verify_ssl=False, 
+                        ssh_key_path=None, 
+                        private_key_string=None, 
+                        port=22, 
+                        timeout=5
+                    )
+                ],
+                supporting_files=[
+                    'redcanaryco-atomic-red-team-22dd2fb/atomics/T1016/src/top-128.txt', 
+                    'redcanaryco-atomic-red-team-22dd2fb/atomics/T1016/src/qakbot.bat'
+                ]
+            )
+        ]
+        """
+        self.__config_file = self.__load_config(config_file)
+        self.techniques = techniques
+        self.test_guids = test_guids
+        self.__host_list = []
+        if host_list:
+            for host in self.parse_input_lists(host_list):
+                self.__host_list.append(self.__create_remote_host_object(
+                    hostname=host,
+                    username=username,
+                    password=password,
+                    ssh_key_path=ssh_key_path,
+                    private_key_string=private_key_string,
+                    verify_ssl=verify_ssl,
+                    ssh_port=ssh_port,
+                    ssh_timeout=ssh_timeout
+                ))
 
     def __load_config(self, config_file):
-        if not os.path.exists(config_file):
-            raise FileNotFoundError('Please provide a config_file path that exists')
-        from .atomic.loader import Loader
-        config = Loader().load_technique(config_file)
-        if not config.get('atomic_tests') and not isinstance(config, list):
-            raise MalformedFile('Please provide one or more atomic_tests within your config_file')
-        return config
+        if config_file:
+            if not os.path.exists(config_file):
+                raise FileNotFoundError('Please provide a config_file path that exists')
+            from .atomic.loader import Loader
+            config = Loader().load_technique(config_file)
+            if not config.get('atomic_tests') and not isinstance(config, list):
+                raise MalformedFile('Please provide one or more atomic_tests within your config_file')
+            return config
+        return {}
 
     def __parse_hosts(self, inventory):
         host_list = []
         for host in inventory.get('hosts'):
             inputs = inventory['authentication']
             host_list.append(
-                self.create_remote_host_object(
+                self.__create_remote_host_object(
                     hostname=host,
                     username=inputs['username'] if inputs.get('username') else None,
                     password=inputs['password'] if inputs.get('password') else None,
@@ -42,7 +112,7 @@ class ConfigParser(Base):
             )
         return host_list
 
-    def create_remote_host_object(self, 
+    def __create_remote_host_object(self, 
         hostname=None,
         username=None,
         password=None,
@@ -62,28 +132,150 @@ class ConfigParser(Base):
                 timeout=ssh_timeout
             )
 
-    def __parse_test_guids(self):
-        if self.config_file:
-            for item in self.config_file['atomic_tests']:
+    def __parse_test_guids(self, _config_file):
+        test_dict = {}
+        if _config_file:
+            for item in _config_file['atomic_tests']:
                 if item.get('guid'):
-                    if item['guid'] not in self.__test_config:
-                        self.__test_config[item['guid']] = []
-                    if item.get('inventories') and self.config_file.get('inventory'):
+                    if item['guid'] not in test_dict:
+                        test_dict[item['guid']] = []
+                    if item.get('inventories') and _config_file.get('inventory'):
                         # process inventories to run commands remotely
                         for inventory in item['inventories']:
-                            if self.config_file['inventory'].get(inventory):
-                                self.__test_config[item['guid']] = self.__parse_hosts(self.config_file['inventory'][inventory])
+                            if _config_file['inventory'].get(inventory):
+                                test_dict[item['guid']] = self.__parse_hosts(_config_file['inventory'][inventory])
+        if test_dict:
+            for key,val in test_dict.items():
+                self.__run_list.extend(
+                    self.__build_run_list(
+                        test_guids=[key],
+                        host_list=val
+                    )
+                )
+
+    def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
+        __run_list = []
+        self.__loaded_techniques = Loader().load_techniques()
+        if test_guids:
+            for key,val in self.__loaded_techniques.items():
+                test_list = []
+                for test in val.atomic_tests:
+                    if test.auto_generated_guid in test_guids:
+                        test_list.append(test)
+                if test_list:
+                    temp = self.__loaded_techniques[key]
+                    temp.atomic_tests = test_list
+                    temp.hosts = host_list
+                    __run_list.append(temp)
+        if techniques:
+            if 'all' not in techniques:
+                for technique in techniques:
+                    if self.__loaded_techniques.get(technique):
+                        temp = self.__loaded_techniques[technique]
+                        temp.hosts = host_list
+                        __run_list.append(temp)
+            elif 'all' in techniques and not test_guids:
+                for key,val in self.__loaded_techniques.items():
+                    temp = self.__loaded_techniques[key]
+                    temp.hosts = host_list
+                    __run_list.append(temp)
+            else:
+                pass
+        return __run_list
+
+    @property
+    def run_list(self):
+        """Returns a list of Atomic objects that will be ran.
+        
+        This list combines Atomics and potentially filters 
+        tests defined within that Atomic object based on passed
+        in parameters and config_file.
+
+        Additionally, a list of Host objects are added to their
+        defined techniques or test_guids based on config and/or
+        passed in parameters.
+
+        [
+            Atomic(
+                attack_technique='T1016', 
+                display_name='System Network Configuration Discovery', 
+                path='/Users/josh.rickard/_Swimlane2/atomic-operator/redcanaryco-atomic-red-team-22dd2fb/atomics/T1016', 
+                atomic_tests=[
+                    AtomicTest(
+                        name='System Network Configuration Discovery', 
+                        description='Identify network configuration information.\n\nUpon successful execution, ...', 
+                        supported_platforms=['macos', 'linux'], 
+                        auto_generated_guid='c141bbdb-7fca-4254-9fd6-f47e79447e17', 
+                        executor=AtomicExecutor(
+                            name='sh', 
+                            command='if [ -x "$(command -v arp)" ]; then arp -a; else echo "arp is missing from ....', 
+                            cleanup_command=None, 
+                            elevation_required=False, steps=None
+                        ), 
+                        input_arguments=None, 
+                        dependency_executor_name=None, 
+                        dependencies=[]
+                    )
+                ], 
+                hosts=[
+                    Host(
+                        hostname='192.168.1.1', 
+                        username='username', 
+                        password='some_passowrd!', 
+                        verify_ssl=False, 
+                        ssh_key_path=None, 
+                        private_key_string=None, 
+                        port=22, 
+                        timeout=5
+                    )
+                ],
+                supporting_files=[
+                    'redcanaryco-atomic-red-team-22dd2fb/atomics/T1016/src/top-128.txt', 
+                    'redcanaryco-atomic-red-team-22dd2fb/atomics/T1016/src/qakbot.bat'
+                ]
+            )
+        ]
+
+        Returns:
+            [list]: A list of modified Atomic objects that will be used to run 
+                    either remotely or locally.
+        """
+        if self.__config_file:
+            self.__parse_test_guids(self.__config_file)
+        self.__run_list.extend(
+            self.__build_run_list(
+                techniques=self.parse_input_lists(self.techniques),
+                test_guids=self.parse_input_lists(self.test_guids),
+                host_list=self.__host_list
+            )
+        )
+        return self.__run_list
 
     @property
     def config(self):
-        if self.__test_config:
-            return self.__test_config
+        """Returns raw converted config_file passed into class
+
+        Returns:
+            [dict]: Returns the converted config_file as dictionary.
+        """
+        if self.__config_file:
+            return self.__config_file
         else:
             return None
 
     def is_defined(self, guid: str):
-        if self.config and guid in self.config:
-            return True
+        """Checks to see if a GUID is defined within a config file
+
+        Args:
+            guid (str): The GUID defined within a parsed config file
+
+        Returns:
+            [bool]: Returns True if GUID is defined within parsed config_file
+        """
+        if self.__config_file:
+            for item in self.__config_file['atomic_tests']:
+                if item['guid'] == guid:
+                    return True
         return False
 
     def get_inputs(self, guid: str): 
@@ -95,8 +287,8 @@ class ConfigParser(Base):
         Returns:
             dict: A dictionary of defined input arguments or empty
         """
-        if self.config_file:
-            for item in self.config_file['atomic_tests']:
+        if self.__config_file:
+            for item in self.__config_file['atomic_tests']:
                 if item['guid'] == guid:
                     return item.get('input_arguments', {})
         return {}

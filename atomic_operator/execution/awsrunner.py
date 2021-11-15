@@ -74,7 +74,7 @@ class AWSRunner(Runner):
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
         return __executor
 
-    def run(self):
+    def start(self):
         response = self.__check_for_aws_cli()
         if not response.get('error'):
             return self.execute(executor=self._get_executor_command())
