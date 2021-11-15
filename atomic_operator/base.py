@@ -121,3 +121,37 @@ Inputs for {title}:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
         return command
+
+    def _show_unsupported_platform(self, test, show_output=False) -> None:
+        output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
+        if show_output:
+            self.__logger.warning(output_string)
+        else:
+            self.show_details(output_string)
+
+    def _check_if_aws(self, test):
+        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+            return True
+        return False
+
+    def _check_platform(self, test, show_output=False) -> bool:
+        if self._check_if_aws(test):
+            return True
+        if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
+            self._show_unsupported_platform(test, show_output=show_output)
+            return False
+        return True
+
+    def _set_input_arguments(self, test, **kwargs):
+        if test.input_arguments:
+            if kwargs:
+                for input in test.input_arguments:
+                    for key,val in kwargs.items():
+                        if input.name == key:
+                            input.value = val
+            if Base.CONFIG.prompt_for_input_args:
+                for input in test.input_arguments:
+                    input.value = self.prompt_user_for_input(test.name, input)
+            for input in test.input_arguments:
+                if input.value == None:
+                    input.value = input.default
