@@ -141,29 +141,12 @@ class AtomicOperator(Base):
         folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
         return os.path.join(desintation, folder_name)
 
-    def run(
-        self, 
-        techniques: list=['all'], 
-        test_guids: list=[],
-        atomics_path=os.getcwd(), 
-        check_prereqs=False, 
-        get_prereqs=False, 
-        cleanup=False, 
-        copy_source_files=True,
-        command_timeout=20, 
-        show_details=False,
-        prompt_for_input_args=False,
-        return_atomics=False,
-        config_file=None,
-        hosts=[],
-        username=None,
-        password=None,
-        ssh_key_path=None,
-        private_key_string=None,
-        verify_ssl=False,
-        ssh_port=22,
-        ssh_timeout=5,
-        **kwargs) -> None:
+    def run(self, techniques: list=['all'], test_guids: list=[], atomics_path=os.getcwd(), 
+                  check_prereqs=False, get_prereqs=False, cleanup=False, copy_source_files=True,
+                  command_timeout=20, show_details=False, prompt_for_input_args=False,
+                  return_atomics=False, config_file=None, hosts=[], username=None,
+                  password=None, ssh_key_path=None, private_key_string=None,
+                  verify_ssl=False, ssh_port=22, ssh_timeout=5, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
