@@ -58,7 +58,6 @@ class AtomicOperator(Base):
     """
 
     __test_responses = {}
-    __run_list = []
 
     def __find_path(self, value):
         """Attempts to find a path containing the atomic-red-team repository
