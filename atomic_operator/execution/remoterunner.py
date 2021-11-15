@@ -76,7 +76,7 @@ class RemoteRunner(Runner):
             final_state = ex
         return final_state
 
-    def run(self, host=None, executor=None):
+    def start(self, host=None, executor=None):
         """The main method which runs a single AtomicTest object remotely on one remote host.
         """
         return self.execute(host_name=host.hostname, executor=executor, host=host)
