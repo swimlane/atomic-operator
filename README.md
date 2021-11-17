@@ -9,7 +9,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.4.0 ([What's new?](release-notes.md))
+> Current Version: v0.4.3 ([What's new?](CHANGELOG.md))
 
 ## Why?
 
@@ -136,8 +136,8 @@ DESCRIPTION
 FLAGS
     --techniques=TECHNIQUES
         Type: list
-        Default: ['All']
-        One or more defined techniques by attack_technique ID. Defaults to 'All'.
+        Default: ['all']
+        One or more defined techniques by attack_technique ID. Defaults to 'all'.
     --test_guids=TEST_GUIDS
         Type: list
         Default: []
@@ -145,15 +145,18 @@ FLAGS
     --atomics_path=ATOMICS_PATH
         Default: '/U...
         The path of Atomic tests. Defaults to os.getcwd().
-    --check_dependencies=CHECK_DEPENDENCIES
+    --check_prereqs=CHECK_PREREQS
         Default: False
-        Whether or not to check for dependencies. Defaults to False.
+        Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
     --get_prereqs=GET_PREREQS
         Default: False
         Whether or not you want to retrieve prerequisites. Defaults to False.
     --cleanup=CLEANUP
         Default: False
         Whether or not you want to run cleanup command(s). Defaults to False.
+    --copy_source_files=COPY_SOURCE_FILES
+        Default: True
+        Whether or not you want to copy any related source (src, bin, etc.) files to a remote host. Defaults to True.
     --command_timeout=COMMAND_TIMEOUT
         Default: 20
         Timeout duration for each command. Defaults to 20.
@@ -163,6 +166,9 @@ FLAGS
     --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
         Default: False
         Whether you want to prompt for input arguments for each test. Defaults to False.
+    --return_atomics=RETURN_ATOMICS
+        Default: False
+        Whether or not you want to return atomics instead of running them. Defaults to False.
     --config_file=CONFIG_FILE
         Type: Optional[]
         Default: None
@@ -182,6 +188,10 @@ FLAGS
         Type: Optional[]
         Default: None
         Path to a SSH Key for authentication of remote connections. Defaults to None.
+    --private_key_string=PRIVATE_KEY_STRING
+        Type: Optional[]
+        Default: None
+        A private SSH Key string used for authentication of remote connections. Defaults to None.
     --verify_ssl=VERIFY_SSL
         Default: False
         Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
