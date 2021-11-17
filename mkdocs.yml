@@ -1,5 +1,6 @@
 site_name: atomic-operator
 site_description: This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
+docs_dir: docs
 theme:
   name: 'material'
 nav:
