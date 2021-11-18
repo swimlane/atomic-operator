@@ -4,7 +4,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.4.3 ([What's new?](CHANGELOG.md))
+> Current Version: v0.5.0 ([What's new?](CHANGELOG.md))
 
 ## Why?
 
@@ -155,7 +155,7 @@ FLAGS
     --command_timeout=COMMAND_TIMEOUT
         Default: 20
         Timeout duration for each command. Defaults to 20.
-    --show_details=SHOW_DETAILS
+    --debug=DEBUG
         Default: False
         Whether or not you want to output details about tests being ran. Defaults to False.
     --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
@@ -240,7 +240,7 @@ operator.run(
     get_prereqs=False, 
     cleanup=False, 
     command_timeout=20, 
-    show_details=False,
+    debug=False,
     prompt_for_input_args=False,
     **kwargs
 )

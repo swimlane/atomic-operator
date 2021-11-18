@@ -47,7 +47,11 @@ class Base(metaclass=LoggingBase):
         """
         response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
-        z.extractall(save_path)
+        with zipfile.ZipFile(BytesIO(response.content)) as zf:
+            for member in zf.infolist():
+                file_path = os.path.realpath(os.path.join(save_path, member.filename))
+                if file_path.startswith(os.path.realpath(save_path)):
+                    zf.extract(member, save_path)
         return z.namelist()[0]
 
     def get_local_system_platform(self) -> str:
@@ -71,15 +75,6 @@ class Base(metaclass=LoggingBase):
             str: The absolute path of the provided string
         """
         return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
-
-    def show_details(self, value) -> None:
-        """Displays the provided value string if Base.CONFIG.show_details is True
-
-        Args:
-            value (str): A string to display if selected in config.
-        """
-        if Base.CONFIG.show_details:
-            self.__logger.info(value)
 
     def prompt_user_for_input(self, title, input_object):
         """Prompts user for input values based on the provided values.
@@ -122,13 +117,6 @@ Inputs for {title}:
                             pass
         return command
 
-    def _show_unsupported_platform(self, test, show_output=False) -> None:
-        output_string = f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
-        if show_output:
-            self.__logger.warning(output_string)
-        else:
-            self.show_details(output_string)
-
     def _check_if_aws(self, test):
         if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
             return True
@@ -138,7 +126,7 @@ Inputs for {title}:
         if self._check_if_aws(test):
             return True
         if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            self._show_unsupported_platform(test, show_output=show_output)
+            self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
             return False
         return True
 

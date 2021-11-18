@@ -63,7 +63,7 @@ class LocalRunner(Runner):
         """Checking if executor works with local system platform
         """
         __executor = None
-        self.show_details(f"Checking if executor works on local system platform.")
+        self.__logger.debug(f"Checking if executor works on local system platform.")
         if self.__local_system_platform in self.test.supported_platforms:
             if self.test.executor.name != 'manual':
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)

@@ -53,9 +53,9 @@ class Runner(Base):
         if self.test.dependency_executor_name:
             executor = self.test.dependency_executor_name
         for dependency in self.test.dependencies:
-            self.show_details(f"Dependency description: {dependency.description}")
+            self.__logger.debug(f"Dependency description: {dependency.description}")
             if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
-                self.show_details(f"Retrieving prerequistes")
+                self.__logger.debug(f"Retrieving prerequistes")
                 get_prereq_response = self.execute_process(
                     command=dependency.get_prereq_command,
                     executor=executor,
@@ -66,6 +66,7 @@ class Runner(Base):
                         return_dict[key] = {}
                     return_dict[key].update({'get_prereqs': val})
             if Base.CONFIG.check_prereqs and dependency.prereq_command:
+                self.__logger.debug("Running prerequisite command")
                 response = self.execute_process(
                     command=dependency.prereq_command,
                     executor=executor,
@@ -81,11 +82,11 @@ class Runner(Base):
         """The main method which runs a single AtomicTest object on a local system.
         """
         return_dict = {}
-        self.show_details(f"Using {executor} as executor.")
+        self.__logger.debug(f"Using {executor} as executor.")
         if executor:
             if Base.CONFIG.check_prereqs and self.test.dependencies:
                 return_dict.update(self._run_dependencies(host=host, executor=executor))
-            self.show_details("Running command")
+            self.__logger.debug("Running command")
             response = self.execute_process(
                 command=self.test.executor.command,
                 executor=executor,
@@ -94,7 +95,7 @@ class Runner(Base):
             )
             return_dict.update({'command': response})
             if Runner.CONFIG.cleanup and self.test.executor.cleanup_command:
-                self.show_details("Running cleanup command")
+                self.__logger.debug("Running cleanup command")
                 cleanup_response = self.execute_process(
                     command=self.test.executor.cleanup_command,
                     executor=executor,
