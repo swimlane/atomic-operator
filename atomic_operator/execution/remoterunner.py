@@ -55,47 +55,47 @@ class RemoteRunner(Runner):
             error_string = f'SSH Error - Unable to connect to {host.hostname} - Received {type(ec).__name__}'
             self.__logger.debug(f'Full stack trace: {ec}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except AuthenticationException as ea:
             error_string = f'SSH Error - Unable to authenticate to host - {host.hostname} - Received {type(ea).__name__}'
             self.__logger.debug(f'Full stack trace: {ea}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except BadAuthenticationType as eb:
             error_string = f'SSH Error - Unable to use provided authentication type to host - {host.hostname} - Received {type(eb).__name__}'
             self.__logger.debug(f'Full stack trace: {eb}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except PasswordRequiredException as ep:
             error_string = f'SSH Error - Must provide a password to authenticate to host - {host.hostname} - Received {type(ep).__name__}'
             self.__logger.debug(f'Full stack trace: {ep}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except AuthenticationError as ewa:
             error_string = f'Windows Error - Unable to authenticate to host - {host.hostname} - Received {type(ewa).__name__}'
             self.__logger.debug(f'Full stack trace: {ewa}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except WinRMTransportError as ewt:
             error_string = f'Windows Error - Error occurred during transport on host - {host.hostname} - Received {type(ewt).__name__}'
             self.__logger.debug(f'Full stack trace: {ewt}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except WSManFaultError as ewf:
             error_string = f'Windows Error - Received WSManFault information from host - {host.hostname} - Received {type(ewf).__name__}'
             self.__logger.debug(f'Full stack trace: {ewf}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except RequestException as re:
             error_string = f'Request Exception - Connection Error to the configured host - {host.hostname} - Received {type(re).__name__}'
             self.__logger.debug(f'Full stack trace: {re}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         except Exception as ex:
             error_string = f'Uknown Error - Received an unknown error from host - {host.hostname} - Received {type(ex).__name__}'
             self.__logger.debug(f'Full stack trace: {ex}')
             self.__logger.warning(error_string)
-            return error_string
+            return {'error': error_string}
         return final_state
 
     def start(self, host=None, executor=None):
