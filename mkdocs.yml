@@ -28,3 +28,8 @@ plugins:
             filters:
               - "!^_"  # exlude all members starting with _
               - "^__init__$"  # but always include __init__ modules and methods
+  - mike:
+      version_selector: true
+extra:
+  version:
+    provider: mike

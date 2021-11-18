@@ -19,6 +19,7 @@ class AWSRunner(Runner):
         self.__local_system_platform = self.get_local_system_platform()
 
     def __check_for_aws_cli(self):
+        self.__logger.debug('Checking to see if aws cli is installed.')
         response = self.execute_process(command='aws --version', executor=self._get_executor_command(), cwd=os.getcwd())
         if response and response.get('error'):
             self.__logger.warning(response['error'])
@@ -68,7 +69,7 @@ class AWSRunner(Runner):
         """Checking if executor works with local system platform
         """
         __executor = None
-        self.show_details(f"Checking if executor works on local system platform.")
+        self.__logger.debug(f"Checking if executor works on local system platform.")
         if 'iaas:aws' in self.test.supported_platforms:
             if self.test.executor.name != 'manual':
                 __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)

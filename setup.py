@@ -1,12 +1,28 @@
+import os
+
 from setuptools import setup, find_packages
 
 def parse_requirements(requirement_file):
     with open(requirement_file) as f:
         return f.readlines()
 
-version = dict()
-with open("./atomic_operator/utils/version.py") as fp:
-    exec(fp.read(), version)
+
+def read(rel_path: str) -> str:
+    here = os.path.abspath(os.path.dirname(__file__))
+    # intentionally *not* adding an encoding option to open, See:
+    #   https://github.com/pypa/virtualenv/issues/201#issuecomment-3145690
+    with open(os.path.join(here, rel_path)) as fp:
+        return fp.read()
+
+
+def get_version(rel_path: str) -> str:
+    for line in read(rel_path).splitlines():
+        if line.startswith("__version__"):
+            # __version__ = "0.9"
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
+
 
 PROJECT_URLS = {
     "Documentation": "https://swimlane.com",
@@ -37,7 +53,7 @@ CLASSIFIERS = [
 
 setup(
     name='atomic-operator',
-    version=version['__version__'],
+    version=get_version("atomic_operator/__init__.py"),
     packages=find_packages(exclude=['tests*']),
     license='MIT',
     description='A python package to execute Atomic tests',

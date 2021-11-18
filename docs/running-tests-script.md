@@ -79,14 +79,14 @@ art.run(
 
 This defaults to `20` seconds but you can specify another value if needed.
 
-## Show Details
+## Debug
 
-The `show_details` parameter will show additional details about the Atomic and tests (e.g. descriptions, etc.).
+The `debug` parameter will show additional details about the Atomic and tests (e.g. descriptions, etc.).
 
 ```python
 art.run(
     atomics_path='my_local_folder/atomic-red-team',
-    show_details=True
+    debug=True
 )
 ```
 
