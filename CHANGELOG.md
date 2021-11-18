@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.5.1 - 2021-11-18
+
+    * Updating handling of passing --help to the run command
+    * Updated docs to reflect change
+
 ## 0.5.0 - 2021-11-18
 
     * Updated handling of versioning
