@@ -175,6 +175,8 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
+        if kwargs.get('help'):
+            self.__logger.info("Looks like you tried to run help. Please run 'atomic-operator run -- --help'")
         if debug:
             import logging
             logging.getLogger().setLevel(logging.DEBUG)
