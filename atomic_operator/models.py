@@ -19,7 +19,7 @@ class Config:
     get_prereqs           = attr.ib(default=False)
     cleanup               = attr.ib(default=False)
     command_timeout       = attr.ib(default=20)
-    show_details          = attr.ib(default=False)
+    debug                 = attr.ib(default=False)
     prompt_for_input_args = attr.ib(default=False)
     kwargs                = attr.ib(default={})
     copy_source_files     = attr.ib(default=True)
