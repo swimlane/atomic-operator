@@ -85,7 +85,7 @@ class AtomicOperator(Base):
             technique (Atomic): An Atomic object which contains a list of AtomicTest
                                 objects.
         """
-        self.show_details(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
+        self.__logger.debug(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
             self._set_input_arguments(test, **kwargs)
             if test.auto_generated_guid not in self.__test_responses:
@@ -93,7 +93,7 @@ class AtomicOperator(Base):
             if technique.hosts:
                 for host in technique.hosts:
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                    self.show_details(f"Description: {test.description}")
+                    self.__logger.debug(f"Description: {test.description}")
                     if test.executor.name in ['sh', 'bash']:
                         self.__test_responses[test.auto_generated_guid].update(
                             RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='ssh')
@@ -111,7 +111,7 @@ class AtomicOperator(Base):
             else:
                 if self._check_platform(test, show_output=True):
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                    self.show_details(f"Description: {test.description}")
+                    self.__logger.debug(f"Description: {test.description}")
                     if self._check_if_aws(test):
                         self.__test_responses[test.auto_generated_guid].update(
                             AWSRunner(test, technique.path).start()
@@ -143,7 +143,7 @@ class AtomicOperator(Base):
 
     def run(self, techniques: list=['all'], test_guids: list=[], atomics_path=os.getcwd(), 
                   check_prereqs=False, get_prereqs=False, cleanup=False, copy_source_files=True,
-                  command_timeout=20, show_details=False, prompt_for_input_args=False,
+                  command_timeout=20, debug=False, prompt_for_input_args=False,
                   return_atomics=False, config_file=None, hosts=[], username=None,
                   password=None, ssh_key_path=None, private_key_string=None,
                   verify_ssl=False, ssh_port=22, ssh_timeout=5, **kwargs) -> None:
@@ -158,7 +158,7 @@ class AtomicOperator(Base):
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
             copy_source_files (bool, optional): Whether or not you want to copy any related source (src, bin, etc.) files to a remote host. Defaults to True.
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
-            show_details (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
+            debug (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
             return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
@@ -175,6 +175,9 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
+        if debug:
+            import logging
+            logging.getLogger().setLevel(logging.DEBUG)
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
@@ -184,7 +187,7 @@ class AtomicOperator(Base):
             get_prereqs           = get_prereqs,
             cleanup               = cleanup,
             command_timeout       = command_timeout,
-            show_details          = show_details,
+            debug                 = debug,
             prompt_for_input_args = prompt_for_input_args,
             kwargs                = kwargs,
             copy_source_files     = copy_source_files
