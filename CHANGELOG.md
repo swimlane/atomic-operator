@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 0.5.0 - 2021-11-18
+
+    * Updated handling of versioning
+    * Updated CI to handle versioning of docs and deployment on release
+    * Added better handling of extracting zip file
+    * Added safer loading of yaml files
+    * Update docs
+    * Improved logging across the board and implemented a debug switch
+
 ## 0.4.0 - 2021-11-15
 
     * Added support for transferring files during remote execution
