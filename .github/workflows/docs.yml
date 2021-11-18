@@ -17,6 +17,8 @@ jobs:
           echo "RELEASE_TAG_VERSION=${RELEASE_TAG_VERSION:1}" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
+          pip install -r requirements.txt
+          python setup.py install
           pip install -r requirements-dev.txt
           pip install mkdocs-material mike # 
           mike deploy --push --update-aliases ${RELEASE_TAG_VERSION} latest
