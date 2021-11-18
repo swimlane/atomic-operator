@@ -52,12 +52,12 @@ atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1
 
 This defaults to `20` seconds but you can specify another value if needed.
 
-## Show Details
+## Debug
 
-The `show_details` parameter will show additional details about the Atomic and tests (e.g. descriptions, etc.).
+The `debug` parameter will show additional details about the Atomic and tests (e.g. descriptions, etc.).
 
 ```bash
-atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1560.002,T1560.001 --show_details True
+atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1560.002,T1560.001 --debug
 ```
 
 The default value is `False` and must be set to `True` to show this extra detail.
