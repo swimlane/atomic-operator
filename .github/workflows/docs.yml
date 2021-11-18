@@ -1,0 +1,22 @@
+name: Generate & Deploy Documentation
+on:
+  push:
+    branches: # 
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Set release tag
+        run: | 
+          export RELEASE_TAG_VERSION=${{ github.event.release.tag_name }}
+          echo "RELEASE_TAG_VERSION=${RELEASE_TAG_VERSION:1}" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: |
+          pip install mkdocs-material mike # 
+          mike deploy --push --update-aliases ${RELEASE_TAG_VERSION} latest
+     #     mkdocs gh-deploy --force
