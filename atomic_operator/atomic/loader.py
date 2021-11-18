@@ -43,11 +43,11 @@ class Loader(Base):
         """
         try:
             with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
-                return yaml.load(f.read(), Loader=yaml.SafeLoader)
+                return yaml.safe_load(f.read())
         except:
             # windows does not like get_abs_path so casting to string
             with open(str(path_to_dir), 'r', encoding="utf-8") as f:
-                return yaml.load(f.read(), Loader=yaml.SafeLoader)
+                return yaml.safe_load(f.read())
 
     def load_techniques(self) -> dict:
         """The main entrypoint when loading techniques from disk.
