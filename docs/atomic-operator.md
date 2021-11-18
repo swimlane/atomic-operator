@@ -108,7 +108,7 @@ FLAGS
         Whether or not you want to run cleanup command(s). Defaults to False.
     --command_timeout=COMMAND_TIMEOUT
         Timeout duration for each command. Defaults to 20.
-    --show_details=SHOW_DETAILS
+    --debug=DEBUG
         Whether or not you want to output details about tests being ran. Defaults to False.
     --prompt_for_input_args=PROMPT_FOR_INPUT_ARGS
         Whether you want to prompt for input arguments for each test. Defaults to False.
@@ -189,7 +189,7 @@ operator.run(
     get_prereqs=False, 
     cleanup=False, 
     command_timeout=20, 
-    show_details=False,
+    debug=False,
     prompt_for_input_args=False,
     config_file="some_path.yaml"
     **kwargs
