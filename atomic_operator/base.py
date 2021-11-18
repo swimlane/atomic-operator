@@ -47,7 +47,11 @@ class Base(metaclass=LoggingBase):
         """
         response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
-        z.extractall(save_path)
+        with zipfile.ZipFile(BytesIO(response.content)) as zf:
+            for member in zf.infolist():
+                file_path = os.path.realpath(os.path.join(save_path, member.filename))
+                if file_path.startswith(os.path.realpath(save_path)):
+                    zf.extract(member, save_path)
         return z.namelist()[0]
 
     def get_local_system_platform(self) -> str:
