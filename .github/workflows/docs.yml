@@ -1,8 +1,8 @@
 name: Generate & Deploy Documentation
 on:
-  push:
-    branches: # 
-      - main
+  release:
+    types: [created]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
