@@ -76,7 +76,10 @@ You can run `atomic-operator` from the command line or within your own Python sc
 
 ```bash
 atomic-operator --help
+atomic-operator run -- --help
 ```
+
+> Please note that to see details about the run command run `atomic-operator run -- --help` and NOT `atomic-operator run --help`
 
 ### Retrieving Atomic Tests
 
