@@ -27,8 +27,8 @@ jobs:
         sudo pip install -r requirements-dev.txt
         sudo python -m pytest
     - uses: actions/checkout@v1
-    - uses: xen0l/dlint-check@master
     - name: Run dlint on package
+      uses: xen0l/dlint-check@master
       with:
         path: 'atomic_operator'
     - name: Code Coverage on Ubuntu
