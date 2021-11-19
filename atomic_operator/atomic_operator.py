@@ -177,6 +177,7 @@ class AtomicOperator(Base):
         """
         if kwargs.get('help'):
             self.__logger.info("Looks like you tried to run help. Please run 'atomic-operator run -- --help'")
+            return
         if debug:
             import logging
             logging.getLogger().setLevel(logging.DEBUG)
