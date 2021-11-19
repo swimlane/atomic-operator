@@ -7,7 +7,6 @@ import requests
 from .utils.logger import LoggingBase
 
 
-
 class Base(metaclass=LoggingBase):
 
     CONFIG = None
@@ -99,14 +98,20 @@ Inputs for {title}:
             value_list = set(value)
         return list(value_list)
 
+    def __path_replacement(self, string, path):
+        try:
+            string = string.replace('$PathToAtomicsFolder', path)
+        except:
+            pass
+        try:
+            string = string.replace('PathToAtomicsFolder', path)
+        except:
+            pass
+        return string
+
     def _replace_command_string(self, command: str, path:str, input_arguments: list=[]):
         if command:
-            # TODO: Figure out how to handle remote execution of these dependencies (e.g. T1037\\src\\batstartup.bat)
-            try:
-                command = command.replace('$PathToAtomicsFolder', path)
-                command = command.replace('PathToAtomicsFolder', path)
-            except:
-                pass
+            command = self.__path_replacement(command, path)
             if input_arguments:
                 for input in input_arguments:
                     for string in self._replacement_strings:
@@ -115,7 +120,7 @@ Inputs for {title}:
                         except:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
-        return command
+        return self.__path_replacement(command, path)
 
     def _check_if_aws(self, test):
         if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
