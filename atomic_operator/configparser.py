@@ -84,7 +84,7 @@ class ConfigParser(Base):
                 ))
 
     def __load_config(self, config_file):
-        if self.get_abs_path(config_file):
+        if config_file and self.get_abs_path(config_file):
             config_file = self.get_abs_path(config_file)
             if not os.path.exists(config_file):
                 raise FileNotFoundError('Please provide a config_file path that exists')
