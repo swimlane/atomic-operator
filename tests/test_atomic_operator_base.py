@@ -89,3 +89,6 @@ def test_setting_input_arguments():
         input_arguments=test_input_dict
     )
     Base()._set_input_arguments(atomic_test, **kwargs)
+    for input in atomic_test.input_arguments:
+        if kwargs.get(input.name):
+            assert kwargs[input.name] == input.value
