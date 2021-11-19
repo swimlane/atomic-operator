@@ -9,7 +9,7 @@
 
 This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
 
-> Current Version: v0.5.0 ([What's new?](CHANGELOG.md))
+> ([What's new?](CHANGELOG.md))
 
 ## Why?
 
