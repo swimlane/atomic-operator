@@ -29,6 +29,7 @@ class LocalRunner(Runner):
         Returns:
             tuple: A tuple of either outputs or errors from subprocess
         """
+        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments)
         p = subprocess.Popen(
             executor, 
             shell=False, 
