@@ -84,7 +84,8 @@ class ConfigParser(Base):
                 ))
 
     def __load_config(self, config_file):
-        if config_file:
+        if self.get_abs_path(config_file):
+            config_file = self.get_abs_path(config_file)
             if not os.path.exists(config_file):
                 raise FileNotFoundError('Please provide a config_file path that exists')
             from .atomic.loader import Loader
@@ -244,8 +245,8 @@ class ConfigParser(Base):
             self.__parse_test_guids(self.__config_file)
         self.__run_list.extend(
             self.__build_run_list(
-                techniques=self.parse_input_lists(self.techniques),
-                test_guids=self.parse_input_lists(self.test_guids),
+                techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
+                test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
                 host_list=self.__host_list
             )
         )
