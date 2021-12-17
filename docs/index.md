@@ -24,6 +24,8 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Can prompt for input arguments but not required
 * Assist with downloading the atomic-red-team repository
 * Can be automated further based on a configuration file
+* A command-line and importable Python package
+* Plus more
 
 ## Getting Started
 
@@ -40,6 +42,7 @@ The next steps will guide you through setting up and running `atomic-operator`.
 * [Get Atomics](atomics.md) Install / clone Atomic Red Team repository
 * [atomic-operator](atomic-operator.md) Understand the options availble in atomic-operator
 * [Running Test on Command Line](running-tests-command-line.md) or [Running Tests within a Script](running-tests-script.md)
+* [Running Tests via Configuration File](atomic-operator-config.md)
 
 ## Installation
 
@@ -118,6 +121,32 @@ You can see additional parameters by running the following command:
 ```bash
 atomic-operator run -- --help
 ```
+
+
+|Parameter Name|Type|Default|Description|
+|--------------|----|-------|-----------|
+|techniques|list|all|One or more defined techniques by attack_technique ID.|
+|test_guids|list|None|One or more Atomic test GUIDs.|
+|atomics_path|str|os.getcwd()|The path of Atomic tests.|
+|check_prereqs|bool|False|Whether or not to check for prereq dependencies (prereq_comand).|
+|get_prereqs|bool|False|Whether or not you want to retrieve prerequisites.|
+|cleanup|bool|False|Whether or not you want to run cleanup command(s).|
+|copy_source_files|bool|True|Whether or not you want to copy any related source (src, bin, etc.) files to a remote host.|
+|command_timeout|int|20|Time duration for each command before timeout.|
+|debug|bool|False|Whether or not you want to output details about tests being ran.|
+|prompt_for_input_args|bool|False|Whether you want to prompt for input arguments for each test.|
+|return_atomics|bool|False|Whether or not you want to return atomics instead of running them.|
+|config_file|str|None|A path to a conifg_file which is used to automate atomic-operator in environments.|
+|hosts|list|None|A list of one or more remote hosts to run a test on.|
+|username|str|None|Username for authentication of remote connections.|
+|password|str|None|Password for authentication of remote connections.|
+|ssh_key_path|str|None|Path to a SSH Key for authentication of remote connections.|
+|private_key_string|str|None|A private SSH Key string used for authentication of remote connections.|
+|verify_ssl|bool|False|Whether or not to verify ssl when connecting over RDP (windows).|
+|ssh_port|int|22|SSH port for authentication of remote connections.|
+|ssh_timeout|int|5|SSH timeout for authentication of remote connections.|
+|**kwargs|dict|None|If additional flags are passed into the run command then we will attempt to match them with defined inputs within Atomic tests and replace their value with the provided value.|
+
 
 You should see a similar output to the following:
 

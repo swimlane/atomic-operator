@@ -11,6 +11,7 @@ nav:
         - 'Running Tests on Command Line': 'running-tests-command-line.md'
         - 'Running Tests via Scripts': 'running-tests-script.md'
         - 'Running Tests Remotely On Windows': 'windows-remote.md'
+        - 'Running Tests via Configuration File': 'atomic-operator-config.md'
     - Code Reference:
         'Atomic Operator': 'atomic-operator-ref.md'
         'Data Models': 'models-ref.md'
