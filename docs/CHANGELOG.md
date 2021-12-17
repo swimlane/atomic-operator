@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 0.6.0 - 2021-12-17
+
+    * Updated documentation
+    * Added better handling of help
+
+## 0.5.1 - 2021-11-18
+
+    * Updating handling of passing --help to the run command
+    * Updated docs to reflect change
+
+## 0.5.0 - 2021-11-19
+
+    * Updated and expanded tests
+    * Added CI to build docs and deploy to pypi
+    * Updated localrunner to support windows based on changes made previously
+
 ## 0.4.0 - 2021-11-15
 
     * Added support for transferring files during remote execution

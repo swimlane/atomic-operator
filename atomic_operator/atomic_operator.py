@@ -126,6 +126,12 @@ class AtomicOperator(Base):
                     'technique_name': technique.display_name
                 })
 
+    def help(self, method=None):
+        from fire.trace import FireTrace
+        from fire.helptext import HelpText
+        obj = AtomicOperator if not method else getattr(self, method)
+        return HelpText(self.run,trace=FireTrace(obj))
+
     def get_atomics(self, desintation=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
 
@@ -146,7 +152,7 @@ class AtomicOperator(Base):
                   command_timeout=20, debug=False, prompt_for_input_args=False,
                   return_atomics=False, config_file=None, hosts=[], username=None,
                   password=None, ssh_key_path=None, private_key_string=None,
-                  verify_ssl=False, ssh_port=22, ssh_timeout=5, **kwargs) -> None:
+                  verify_ssl=False, ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
@@ -176,8 +182,7 @@ class AtomicOperator(Base):
             ValueError: If a provided technique is unknown we raise an error.
         """
         if kwargs.get('help'):
-            self.__logger.info("Looks like you tried to run help. Please run 'atomic-operator run -- --help'")
-            return
+            return self.help(method='run')
         if debug:
             import logging
             logging.getLogger().setLevel(logging.DEBUG)

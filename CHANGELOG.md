@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.6.0 - 2021-12-17
+
+    * Updated documentation
+    * Added better handling of help
+
 ## 0.5.1 - 2021-11-18
 
     * Updating handling of passing --help to the run command
