@@ -32,7 +32,7 @@ atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-t
 The `run` command has several mandatory and optional parameters that can be used.  You can see these by running the help for this command:
 
 ```bash
-atomic-operator run -- --help
+atomic-operator run --help
 ```
 
 It will return the following:
