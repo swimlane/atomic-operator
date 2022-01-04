@@ -4,6 +4,7 @@ import zipfile
 from io import BytesIO
 import platform
 import requests
+from pick import pick
 from .utils.logger import LoggingBase
 
 
@@ -148,3 +149,20 @@ Inputs for {title}:
             for input in test.input_arguments:
                 if input.value == None:
                     input.value = input.default
+
+    def select_atomic_tests(self, technique):
+        options = None
+        test_list = []
+        for test in technique.atomic_tests:
+            test_list.append(test)
+        if test_list:
+            options = pick(
+                test_list, 
+                title=f"Select Test(s) for Technique {technique.attack_technique} ({technique.display_name})", 
+                multiselect=True, 
+                options_map_func=self.format_pick_options
+            )
+        return [i[0] for i in options] if options else []
+
+    def format_pick_options(self, option):
+        return f"{option.name} ({option.auto_generated_guid})"
