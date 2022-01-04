@@ -151,17 +151,18 @@ class AtomicOperator(Base):
         )
         return os.path.join(desintation, folder_name)
 
-    def run(self, techniques: list=['all'], test_guids: list=[], atomics_path=os.getcwd(), 
-                  check_prereqs=False, get_prereqs=False, cleanup=False, copy_source_files=True,
-                  command_timeout=20, debug=False, prompt_for_input_args=False,
-                  return_atomics=False, config_file=None, hosts=[], username=None,
-                  password=None, ssh_key_path=None, private_key_string=None,
+    def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
+                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
+                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
+                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
+                  hosts=[], username=None, password=None, ssh_key_path=None, private_key_string=None,
                   verify_ssl=False, ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'all'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
+            select_tests (bool, optional): Select one or more tests from provided techniques. Defaults to False.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
@@ -217,7 +218,8 @@ class AtomicOperator(Base):
                 private_key_string=private_key_string,
                 verify_ssl=verify_ssl,
                 ssh_port=ssh_port,
-                ssh_timeout=ssh_timeout
+                ssh_timeout=ssh_timeout,
+                select_tests=select_tests
             )
         self.__run_list = self.__config_parser.run_list
 
