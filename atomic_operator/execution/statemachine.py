@@ -167,13 +167,22 @@ class InnvocationState(State, Base):
     def __copy_supporting_files_on_windows(self, supporting_files):
         if supporting_files:
             for file in supporting_files:
-                path_list = ['c:/temp']
-                for item in file.split(os.path.dirname(self.test_path))[-1].split('/'):
-                    if item:
-                        path_list.append(item)
-                destination_path = self.join_path_regardless_of_separators(*path_list)
-                output, streams, had_errors = self.__win_client.execute_ps(f"New-Item -Path {os.path.dirname(destination_path)} -ItemType Directory")
-                response = self.__win_client.copy(file, destination_path)
+                try:
+                    path_list = ['c:/temp']
+                    for item in file.split(os.path.dirname(self.test_path))[-1].split('/'):
+                        if item:
+                            path_list.append(item)
+                    destination_path = self.join_path_regardless_of_separators(*path_list)
+                    try:
+                        output, streams, had_errors = self.__win_client.execute_ps(f"New-Item -Path {os.path.dirname(destination_path)} -ItemType Directory")
+                        response = self.__win_client.copy(file, destination_path)
+                    except:
+                        self.__logger.warning(f'Unable to execute copy of supporting file {file}')
+                        self.__logger.warning(f'Output: {output}/nStreams: {streams}/nHad Errors: {had_errors}')
+                        continue
+                except:
+                    self.__logger.info(f'Error when attempting to copy supporting file {file}')
+                    continue
 
     def __invoke_powershell(self, command, input_arguments=None, supporting_files=None):
         if not self.__win_client:
@@ -212,10 +221,15 @@ class InnvocationState(State, Base):
                     else:
                         full_path = f"{dirpath}\{file}"
                         new_destination = f"{destination}\{file}"
-                    command = "sh -c '" + f'file="{new_destination}"' + ' && mkdir -p "${file%/*}" && cat > "${file}"' + "'"
-                    ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
-                    ssh_stdin.write(open(f'{full_path}', 'r').read())
-                    return_list.append(full_path)
+                    try:
+                        command = "sh -c '" + f'file="{new_destination}"' + ' && mkdir -p "${file%/*}" && cat > "${file}"' + "'"
+                        ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
+                        ssh_stdin.write(open(f'{full_path}', 'r').read())
+                        return_list.append(full_path)
+                    except:
+                        self.__logger.warning(f'Unable to execute copy of supporting file {file}')
+                        self.__logger.warning(f'STDIN: {ssh_stdin}/nSTDOUT: {ssh_stdout}/nSTDERR: {ssh_stderr}')
+                        continue
         return return_list
 
     def __invoke_ssh(self, command, input_arguments=None, supporting_files=None):
