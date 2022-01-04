@@ -14,6 +14,28 @@ If you would like to specify specific tests then you must provide them as a list
 atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1560.002,T1560.001
 ```
 
+## Selecting Individual Atomic Tests
+
+You can select individual tests when you provide one or more specific techniques. For example running the following on the command line:
+
+```bash
+atomic-operator run --techniques T1564.001 --select_tests
+```
+
+Will prompt the user with a selection list of tests associated with that technique. A user can select one or more tests by using the space bar to highlight the desired test:
+
+```text
+ Select Test(s) for Technique T1564.001 (Hide Artifacts: Hidden Files and Directories)
+
+ * Create a hidden file in a hidden directory (61a782e5-9a19-40b5-8ba4-69a4b9f3d7be)
+   Mac Hidden file (cddb9098-3b47-4e01-9d3b-6f5f323288a9)
+   Create Windows System File with Attrib (f70974c8-c094-4574-b542-2c545af95a32)
+   Create Windows Hidden File with Attrib (dadb792e-4358-4d8d-9207-b771faa0daa5)
+   Hidden files (3b7015f2-3144-4205-b799-b05580621379)
+   Hide a Directory (b115ecaf-3b24-4ed2-aefe-2fcb9db913d3)
+   Show all hidden files (9a1ec7da-b892-449f-ad68-67066d04380c)
+```
+
 ## Checking Dependencies
 
 There is an optional paramater that determines if `atomic-operator` should check dependencies or not. By default we do not check dependenicies but if set to `True` we will.

@@ -30,6 +30,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Assist with downloading the atomic-red-team repository
 * Can be automated further based on a configuration file
 * A command-line and importable Python package
+* Select specific tests when one or more techniques are specified
 * Plus more
 
 ## Getting Started
@@ -62,6 +63,7 @@ pyyaml==5.4.1
 fire==0.4.0
 requests==2.26.0
 attrs==21.2.0
+pick==1.2.0
 ```
 
 ### macOS, Linux and Windows:
@@ -108,6 +110,26 @@ In order to run a test you must provide some additional properties (and options 
 atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624"
 ```
 
+You can select individual tests when you provide one or more specific techniques. For example running the following on the command line:
+
+```bash
+atomic-operator run --techniques T1564.001 --select_tests
+```
+
+Will prompt the user with a selection list of tests associated with that technique. A user can select one or more tests by using the space bar to highlight the desired test:
+
+```text
+ Select Test(s) for Technique T1564.001 (Hide Artifacts: Hidden Files and Directories)
+
+ * Create a hidden file in a hidden directory (61a782e5-9a19-40b5-8ba4-69a4b9f3d7be)
+   Mac Hidden file (cddb9098-3b47-4e01-9d3b-6f5f323288a9)
+   Create Windows System File with Attrib (f70974c8-c094-4574-b542-2c545af95a32)
+   Create Windows Hidden File with Attrib (dadb792e-4358-4d8d-9207-b771faa0daa5)
+   Hidden files (3b7015f2-3144-4205-b799-b05580621379)
+   Hide a Directory (b115ecaf-3b24-4ed2-aefe-2fcb9db913d3)
+   Show all hidden files (9a1ec7da-b892-449f-ad68-67066d04380c)
+```
+
 ### Running Tests Remotely
 
 In order to run a test remotely you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
@@ -133,6 +155,7 @@ atomic-operator run -- --help
 |--------------|----|-------|-----------|
 |techniques|list|all|One or more defined techniques by attack_technique ID.|
 |test_guids|list|None|One or more Atomic test GUIDs.|
+|select_tests|bool|False|Select one or more atomic tests to run when a techniques are specified.|
 |atomics_path|str|os.getcwd()|The path of Atomic tests.|
 |check_prereqs|bool|False|Whether or not to check for prereq dependencies (prereq_comand).|
 |get_prereqs|bool|False|Whether or not you want to retrieve prerequisites.|
@@ -177,6 +200,10 @@ FLAGS
         Type: list
         Default: []
         One or more Atomic test GUIDs. Defaults to None.
+    --select_tests=SELECT_TESTS
+        Type: bool
+        Default: False
+        Select one or more tests from provided techniques. Defaults to False.
     --atomics_path=ATOMICS_PATH
         Default: '/U...
         The path of Atomic tests. Defaults to os.getcwd().
