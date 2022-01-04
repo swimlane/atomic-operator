@@ -144,7 +144,11 @@ class AtomicOperator(Base):
         """
         if not os.path.exists(desintation):
             os.makedirs(desintation)
-        folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
+        desintation = kwargs.pop('destination') if kwargs.get('destination') else desintation
+        folder_name = self.download_atomic_red_team_repo(
+            save_path=desintation, 
+            **kwargs
+        )
         return os.path.join(desintation, folder_name)
 
     def run(self, techniques: list=['all'], test_guids: list=[], atomics_path=os.getcwd(), 
