@@ -7,8 +7,6 @@ from .atomic.loader import Loader
 
 class ConfigParser(Base):
 
-    __run_list = []
-
     def __init__(self, config_file=None, techniques=None, test_guids=None, 
                        host_list=None, username=None, password=None,
                        ssh_key_path=None, private_key_string=None, verify_ssl=False,
@@ -135,6 +133,7 @@ class ConfigParser(Base):
 
     def __parse_test_guids(self, _config_file):
         test_dict = {}
+        return_list = []
         if _config_file:
             for item in _config_file['atomic_tests']:
                 if item.get('guid'):
@@ -147,12 +146,13 @@ class ConfigParser(Base):
                                 test_dict[item['guid']] = self.__parse_hosts(_config_file['inventory'][inventory])
         if test_dict:
             for key,val in test_dict.items():
-                self.__run_list.extend(
+                return_list.append(
                     self.__build_run_list(
                         test_guids=[key],
                         host_list=val
                     )
                 )
+        return return_list
 
     def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
         __run_list = []
@@ -241,16 +241,17 @@ class ConfigParser(Base):
             [list]: A list of modified Atomic objects that will be used to run 
                     either remotely or locally.
         """
+        __run_list = []
         if self.__config_file:
-            self.__parse_test_guids(self.__config_file)
-        self.__run_list.extend(
+            __run_list.extend(self.__parse_test_guids(self.__config_file))
+        __run_list.extend(
             self.__build_run_list(
                 techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
                 test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
                 host_list=self.__host_list
             )
         )
-        return self.__run_list
+        return __run_list
 
     @property
     def config(self):
