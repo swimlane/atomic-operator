@@ -16,7 +16,7 @@ from requests.exceptions import RequestException
 
 class RemoteRunner(Runner):
 
-    def __init__(self, atomic_test, test_path, supporting_files=None):
+    def __init__(self, atomic_test, test_path):
         """A single AtomicTest object is provided and ran on the local system
 
         Args:
@@ -25,7 +25,6 @@ class RemoteRunner(Runner):
         """
         self.test = atomic_test
         self.test_path = test_path
-        self.supporting_files = supporting_files
 
     def execute_process(self, command, executor=None, host=None, cwd=None):
         """Main method to execute commands using state machine
