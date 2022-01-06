@@ -44,7 +44,7 @@ class RemoteRunner(Runner):
                     self.state = self.state.on_event(executor, command)
                 if str(self.state) == 'InnvocationState':
                     self.__logger.debug('Running InnvocationState on_event')
-                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments, supporting_files=self.supporting_files, test_path=self.test_path)
+                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments)
                 if str(self.state) == 'ParseResultsState':
                     self.__logger.debug('Running ParseResultsState on_event')
                     final_state = self.state.on_event()
