@@ -7,6 +7,8 @@
     * Updated ConfigParser from instance variables to local method bound variables Using a second AtomicOperator instance executes the tests of the first instance too #33
     * Added the ability to select specific tests for one or more provided techniques
     * Updated documentation
+    * Added new Copier class to handle file transfer for remote connections
+    * Removed gathering of supporting_files and passing around with object
 
 ## 0.6.0 - 2021-12-17
 
