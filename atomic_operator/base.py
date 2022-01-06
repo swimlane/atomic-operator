@@ -99,7 +99,7 @@ Inputs for {title}:
             value_list = set(value)
         return list(value_list)
 
-    def __path_replacement(self, string, path):
+    def _path_replacement(self, string, path):
         try:
             string = string.replace('$PathToAtomicsFolder', path)
         except:
@@ -112,7 +112,7 @@ Inputs for {title}:
 
     def _replace_command_string(self, command: str, path:str, input_arguments: list=[]):
         if command:
-            command = self.__path_replacement(command, path)
+            command = self._path_replacement(command, path)
             if input_arguments:
                 for input in input_arguments:
                     for string in self._replacement_strings:
@@ -121,7 +121,7 @@ Inputs for {title}:
                         except:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
-        return self.__path_replacement(command, path)
+        return self._path_replacement(command, path)
 
     def _check_if_aws(self, test):
         if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
