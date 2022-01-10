@@ -166,6 +166,7 @@ atomic-operator run -- --help
 |prompt_for_input_args|bool|False|Whether you want to prompt for input arguments for each test.|
 |return_atomics|bool|False|Whether or not you want to return atomics instead of running them.|
 |config_file|str|None|A path to a conifg_file which is used to automate atomic-operator in environments.|
+|config_file_only|bool|False|Whether or not you want to run tests based on the provided config_file only.|
 |hosts|list|None|A list of one or more remote hosts to run a test on.|
 |username|str|None|Username for authentication of remote connections.|
 |password|str|None|Password for authentication of remote connections.|
@@ -235,6 +236,9 @@ FLAGS
         Type: Optional[]
         Default: None
         A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
+    --config_file_only=CONFIG_FILE_ONLY
+        Default: False
+        Whether or not you want to run tests based on the provided config_file only. Defaults to False.
     --hosts=HOSTS
         Default: []
         A list of one or more remote hosts to run a test on. Defaults to [].
