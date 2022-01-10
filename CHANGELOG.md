@@ -9,6 +9,7 @@
     * Updated documentation
     * Added new Copier class to handle file transfer for remote connections
     * Removed gathering of supporting_files and passing around with object
+    * Added new config_file_only parameter to only run the defined configuration within a configuration file
 
 ## 0.6.0 - 2021-12-17
 
