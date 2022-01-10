@@ -147,12 +147,11 @@ class ConfigParser(Base):
                                 test_dict[item['guid']] = self.__parse_hosts(_config_file['inventory'][inventory])
         if test_dict:
             for key,val in test_dict.items():
-                return_list.append(
-                    self.__build_run_list(
-                        test_guids=[key],
-                        host_list=val
-                    )
-                )
+                for item in self.__build_run_list(
+                    test_guids=[key],
+                    host_list=val
+                    ):
+                    return_list.append(item)
         return return_list
 
     def __build_run_list(self, techniques=None, test_guids=None, host_list=None, select_tests=False):
@@ -252,15 +251,15 @@ class ConfigParser(Base):
         """
         __run_list = []
         if self.__config_file:
-            __run_list.extend(self.__parse_test_guids(self.__config_file))
-        __run_list.extend(
-            self.__build_run_list(
-                techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
-                test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
-                host_list=self.__host_list,
-                select_tests=self.select_tests
-            )
-        )
+            __run_list = self.__parse_test_guids(self.__config_file)
+
+        for item in self.__build_run_list(
+            techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
+            test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
+            host_list=self.__host_list,
+            select_tests=self.select_tests
+            ):
+            __run_list.append(item)
         return __run_list
 
     @property
