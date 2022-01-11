@@ -16,7 +16,7 @@ from requests.exceptions import RequestException
 
 class RemoteRunner(Runner):
 
-    def __init__(self, atomic_test, test_path, supporting_files=None):
+    def __init__(self, atomic_test, test_path):
         """A single AtomicTest object is provided and ran on the local system
 
         Args:
@@ -25,7 +25,6 @@ class RemoteRunner(Runner):
         """
         self.test = atomic_test
         self.test_path = test_path
-        self.supporting_files = supporting_files
 
     def execute_process(self, command, executor=None, host=None, cwd=None):
         """Main method to execute commands using state machine
@@ -45,7 +44,7 @@ class RemoteRunner(Runner):
                     self.state = self.state.on_event(executor, command)
                 if str(self.state) == 'InnvocationState':
                     self.__logger.debug('Running InnvocationState on_event')
-                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments, supporting_files=self.supporting_files, test_path=self.test_path)
+                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments)
                 if str(self.state) == 'ParseResultsState':
                     self.__logger.debug('Running ParseResultsState on_event')
                     final_state = self.state.on_event()

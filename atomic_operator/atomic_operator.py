@@ -96,15 +96,15 @@ class AtomicOperator(Base):
                     self.__logger.debug(f"Description: {test.description}")
                     if test.executor.name in ['sh', 'bash']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='ssh')
+                            RemoteRunner(test, technique.path).start(host=host, executor='ssh')
                         )
                     elif test.executor.name in ['command_prompt']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='cmd')
+                            RemoteRunner(test, technique.path).start(host=host, executor='cmd')
                         )
                     elif test.executor.name in ['powershell']:
                         self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path, supporting_files=technique.supporting_files).start(host=host, executor='powershell')
+                            RemoteRunner(test, technique.path).start(host=host, executor='powershell')
                         )
                     else:
                         self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
@@ -144,20 +144,26 @@ class AtomicOperator(Base):
         """
         if not os.path.exists(desintation):
             os.makedirs(desintation)
-        folder_name = self.download_atomic_red_team_repo(desintation, **kwargs)
+        desintation = kwargs.pop('destination') if kwargs.get('destination') else desintation
+        folder_name = self.download_atomic_red_team_repo(
+            save_path=desintation, 
+            **kwargs
+        )
         return os.path.join(desintation, folder_name)
 
-    def run(self, techniques: list=['all'], test_guids: list=[], atomics_path=os.getcwd(), 
-                  check_prereqs=False, get_prereqs=False, cleanup=False, copy_source_files=True,
-                  command_timeout=20, debug=False, prompt_for_input_args=False,
-                  return_atomics=False, config_file=None, hosts=[], username=None,
-                  password=None, ssh_key_path=None, private_key_string=None,
-                  verify_ssl=False, ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
+    def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
+                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
+                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
+                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
+                  config_file_only=False, hosts=[], username=None, password=None, 
+                  ssh_key_path=None, private_key_string=None, verify_ssl=False, 
+                  ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
             techniques (list, optional): One or more defined techniques by attack_technique ID. Defaults to 'all'.
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
+            select_tests (bool, optional): Select one or more tests from provided techniques. Defaults to False.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
@@ -168,6 +174,7 @@ class AtomicOperator(Base):
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
             return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
+            config_file_only (bool, optional): Whether or not you want to run tests based on the provided config_file only. Defaults to False.
             hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
             username (str, optional): Username for authentication of remote connections. Defaults to None.
             password (str, optional): Password for authentication of remote connections. Defaults to None.
@@ -204,16 +211,17 @@ class AtomicOperator(Base):
         # line to build a run_list of objects
         self.__config_parser = ConfigParser(
                 config_file=config_file,
-                techniques=self.parse_input_lists(techniques),
-                test_guids=self.parse_input_lists(test_guids),
-                host_list=self.parse_input_lists(hosts),
+                techniques=None if config_file_only else self.parse_input_lists(techniques),
+                test_guids=None if config_file_only else self.parse_input_lists(test_guids),
+                host_list=None if config_file_only else self.parse_input_lists(hosts),
                 username=username,
                 password=password,
                 ssh_key_path=ssh_key_path,
                 private_key_string=private_key_string,
                 verify_ssl=verify_ssl,
                 ssh_port=ssh_port,
-                ssh_timeout=ssh_timeout
+                ssh_timeout=ssh_timeout,
+                select_tests=select_tests
             )
         self.__run_list = self.__config_parser.run_list
 

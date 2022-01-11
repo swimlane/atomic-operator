@@ -7,12 +7,10 @@ from .atomic.loader import Loader
 
 class ConfigParser(Base):
 
-    __run_list = []
-
     def __init__(self, config_file=None, techniques=None, test_guids=None, 
                        host_list=None, username=None, password=None,
                        ssh_key_path=None, private_key_string=None, verify_ssl=False,
-                       ssh_port=22, ssh_timeout=5
+                       ssh_port=22, ssh_timeout=5, select_tests=False
                 ):
         """Parses a provided config file as well as parameters to build a run list
         
@@ -69,6 +67,7 @@ class ConfigParser(Base):
         self.__config_file = self.__load_config(config_file)
         self.techniques = techniques
         self.test_guids = test_guids
+        self.select_tests = select_tests
         self.__host_list = []
         if host_list:
             for host in self.parse_input_lists(host_list):
@@ -135,6 +134,7 @@ class ConfigParser(Base):
 
     def __parse_test_guids(self, _config_file):
         test_dict = {}
+        return_list = []
         if _config_file:
             for item in _config_file['atomic_tests']:
                 if item.get('guid'):
@@ -147,14 +147,14 @@ class ConfigParser(Base):
                                 test_dict[item['guid']] = self.__parse_hosts(_config_file['inventory'][inventory])
         if test_dict:
             for key,val in test_dict.items():
-                self.__run_list.extend(
-                    self.__build_run_list(
-                        test_guids=[key],
-                        host_list=val
-                    )
-                )
+                for item in self.__build_run_list(
+                    test_guids=[key],
+                    host_list=val
+                    ):
+                    return_list.append(item)
+        return return_list
 
-    def __build_run_list(self, techniques=None, test_guids=None, host_list=None):
+    def __build_run_list(self, techniques=None, test_guids=None, host_list=None, select_tests=False):
         __run_list = []
         self.__loaded_techniques = Loader().load_techniques()
         if test_guids:
@@ -173,11 +173,19 @@ class ConfigParser(Base):
                 for technique in techniques:
                     if self.__loaded_techniques.get(technique):
                         temp = self.__loaded_techniques[technique]
+                        if select_tests:
+                            temp.atomic_tests = self.select_atomic_tests(
+                                self.__loaded_techniques[technique]
+                            )
                         temp.hosts = host_list
                         __run_list.append(temp)
             elif 'all' in techniques and not test_guids:
                 for key,val in self.__loaded_techniques.items():
                     temp = self.__loaded_techniques[key]
+                    if select_tests:
+                            temp.atomic_tests = self.select_atomic_tests(
+                                self.__loaded_techniques[key]
+                            )
                     temp.hosts = host_list
                     __run_list.append(temp)
             else:
@@ -241,16 +249,18 @@ class ConfigParser(Base):
             [list]: A list of modified Atomic objects that will be used to run 
                     either remotely or locally.
         """
+        __run_list = []
         if self.__config_file:
-            self.__parse_test_guids(self.__config_file)
-        self.__run_list.extend(
-            self.__build_run_list(
-                techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
-                test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
-                host_list=self.__host_list
-            )
-        )
-        return self.__run_list
+            __run_list = self.__parse_test_guids(self.__config_file)
+
+        for item in self.__build_run_list(
+            techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
+            test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
+            host_list=self.__host_list,
+            select_tests=self.select_tests
+            ):
+            __run_list.append(item)
+        return __run_list
 
     @property
     def config(self):

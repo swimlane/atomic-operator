@@ -4,3 +4,4 @@ requests==2.26.0
 attrs==21.2.0
 pypsrp==0.5.0
 paramiko==2.7.2
+pick==1.2.0
