@@ -10,6 +10,7 @@
     * Added new Copier class to handle file transfer for remote connections
     * Removed gathering of supporting_files and passing around with object
     * Added new config_file_only parameter to only run the defined configuration within a configuration file
+    * Updated documentation around installation on macOS systems with M1 processors
 
 ## 0.6.0 - 2021-12-17
 

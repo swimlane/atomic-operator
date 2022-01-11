@@ -72,6 +72,22 @@ pick==1.2.0
 pip install atomic-operator
 ```
 
+### macOS using M1 processor
+
+```bash
+git clone https://github.com/swimlane/atomic-operator.git
+cd atomic-operator
+
+# Satisfy ModuleNotFoundError: No module named 'setuptools_rust'
+brew install rust
+pip3 install --upgrade pip
+pip3 install setuptools_rust
+
+# Back to our regularly scheduled programming . . .  
+
+python setup.py install
+```
+
 ### Installing from source
 
 ```bash
@@ -342,3 +358,7 @@ See also the list of [contributors](https://github.com/swimlane/atomic-operator/
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details
+
+## Shoutout
+
+- Thanks to [keithmccammon](https://github.com/keithmccammon) for helping identify issues with macOS M1 based proccesssor and providing a fix
