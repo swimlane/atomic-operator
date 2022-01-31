@@ -5,7 +5,8 @@ from .models import (
     Config
 )
 from .configparser import ConfigParser
-from .utils.exceptions import AtomicsFolderNotFound
+    IncorrectParameters
+)
 from .execution import (
     LocalRunner,
     RemoteRunner,
@@ -193,6 +194,15 @@ class AtomicOperator(Base):
         if debug:
             import logging
             logging.getLogger().setLevel(logging.DEBUG)
+        count = 0
+        if check_prereqs:
+            count += 1
+        if get_prereqs:
+            count += 1
+        if cleanup:
+            count += 1
+        if count > 1:
+            return IncorrectParameters(f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs','cleanup'.")
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
