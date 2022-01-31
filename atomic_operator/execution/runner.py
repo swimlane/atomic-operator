@@ -91,9 +91,7 @@ class Runner(Base):
                 command=self.test.executor.command,
                 executor=executor,
                 host=host,
-                cwd=self.test_path
-            )
-            return_dict.update({'command': response})
+                    elevation_requred=self.test.executor.elevation_required
             if Runner.CONFIG.cleanup and self.test.executor.cleanup_command:
                 self.__logger.debug("Running cleanup command")
                 cleanup_response = self.execute_process(
@@ -110,5 +108,5 @@ class Runner(Base):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def execute_process(self, command, executor=None, host=None, cwd=None):
+    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_requred=False):
         raise NotImplementedError

@@ -5,9 +5,10 @@ from ..base import Base
 class Copier(Base):
 
 
-    def __init__(self, windows_client=None, ssh_client=None):
+    def __init__(self, windows_client=None, ssh_client=None, elevation_required=False):
         self.windows_client = windows_client
         self.ssh_client = ssh_client
+        self.elevation_required = elevation_required
 
     def join_path_regardless_of_separators(self, *paths):
         return os.path.sep.join(path.rstrip(r"\/") for path in paths)
@@ -22,7 +23,10 @@ class Copier(Base):
 
     def __copy_file_to_windows(self, source, desintation):
         try:
-            output, streams, had_errors = self.windows_client.execute_ps(f"New-Item -Path {os.path.dirname(desintation)} -ItemType Directory")
+            command = f"New-Item -Path {os.path.dirname(desintation)} -ItemType Directory"
+            if self.elevation_required:
+                command = f'Start-Process PowerShell -Verb RunAs; {command}'
+            output, streams, had_errors = self.windows_client.execute_ps(command)
             response = self.windows_client.copy(source, desintation)
         except:
             self.__logger.warning(f'Unable to execute copy of supporting file {source}')
@@ -32,6 +36,8 @@ class Copier(Base):
         file = destination.rsplit('/', 1)
         try:
             command = "sh -c '" + f'file="{destination}"' + ' && mkdir -p "${file%/*}" && cat > "${file}"' + "'"
+            if self.elevation_required:
+                command = f'sudo {command}'
             ssh_stdin, ssh_stdout, ssh_stderr = self.ssh_client.exec_command(command)
             ssh_stdin.write(open(f'{source}', 'r').read())
         except:
