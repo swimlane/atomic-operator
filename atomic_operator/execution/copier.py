@@ -44,6 +44,12 @@ class Copier(Base):
             self.__logger.warning(f'Unable to execute copy of supporting file {file[-1]}')
             self.__logger.warning(f'STDIN: {ssh_stdin}/nSTDOUT: {ssh_stdout}/nSTDERR: {ssh_stderr}')
 
+    def copy_file(self, source, destination):
+        if self.ssh_client:
+            self.__copy_file_to_nix(source=source, destination=destination)
+        elif self.windows_client:
+            self.__copy_file_to_windows(source=source, destination=destination)
+
     def copy_directory_of_files(self, source, destination):
         return_list = []
         for dirpath, dirnames, files in os.walk(source):
@@ -75,6 +81,7 @@ class Copier(Base):
                             file_list = self.copy_directory_of_files(argument.source, argument.destination)
                             argument.value = argument.destination
                         else:
+                            self.copy_file(argument.source, argument.destination)
                             argument.value = self._replace_command_string(
                                 argument.default, 
                                 path='/tmp',
