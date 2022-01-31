@@ -1,10 +1,13 @@
 import os
+import inspect
 
 from .base import Base
 from .models import (
     Config
 )
 from .configparser import ConfigParser
+from .utils.exceptions import (
+    AtomicsFolderNotFound,
     IncorrectParameters
 )
 from .execution import (
@@ -77,6 +80,16 @@ class AtomicOperator(Base):
         else:
             if os.path.exists(self.get_abs_path(value)):
                 return self.get_abs_path(value)
+
+    def __check_arguments(self, kwargs, method):
+        if kwargs:
+            for arguments in inspect.getfullargspec(method):
+                if isinstance(arguments, list):
+                    for arg in arguments:
+                        for key,val in kwargs.items():
+                            if key in arg:
+                                return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
+            return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
     def __run_technique(self, technique, **kwargs):
         """This method is used to run defined Atomic tests within 
@@ -189,6 +202,9 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
+        response = self.__check_arguments(kwargs, self.run)
+        if response:
+            return response
         if kwargs.get('help'):
             return self.help(method='run')
         if debug:
