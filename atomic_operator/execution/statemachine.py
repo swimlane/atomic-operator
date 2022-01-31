@@ -141,12 +141,14 @@ class InnvocationState(State, Base):
             ssl=hostinfo.verify_ssl
         )
 
-    def __invoke_cmd(self, command, input_arguments=None):
+    def __invoke_cmd(self, command, input_arguments=None, elevation_required=False):
         if not self.__win_client:
             self.__create_win_client(self.hostinfo)
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
-        Copier(windows_client=self.__win_client).copy(input_arguments)
+        Copier(windows_client=self.__win_client, elevation_required=elevation_required).copy(input_arguments)
         command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
+        if elevation_required:
+            command = f'runas /user:{self.hostinfo.username}:{self.hostinfo.password} cmd.exe; {command}'
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
         stdout, stderr, rc = self.__win_client.execute_cmd(command)
         # NOTE: rc (return code of process) should equal 0 but we are not adding logic here this is handled int he ParseResultsState class
@@ -165,15 +167,16 @@ class InnvocationState(State, Base):
     def join_path_regardless_of_separators(self, *paths):
         return os.path.sep.join(path.rstrip(r"\/") for path in paths)
 
-    def __invoke_powershell(self, command, input_arguments=None):
+    def __invoke_powershell(self, command, input_arguments=None, elevation_required=False):
         if not self.__win_client:
             self.__create_win_client(self.hostinfo)
 
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
-        Copier(windows_client=self.__win_client).copy(input_arguments=input_arguments)
+        Copier(windows_client=self.__win_client, elevation_required=elevation_required).copy(input_arguments=input_arguments)
         command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
-
+        if elevation_required:
+            command = f'Start-Process PowerShell -Verb RunAs; {command}'
         output, streams, had_errors = self.__win_client.execute_ps(command)
         if not output:
             output = self.__handle_windows_errors(streams)
@@ -189,7 +192,7 @@ class InnvocationState(State, Base):
             error=self.__handle_windows_errors(streams)
         )
 
-    def __invoke_ssh(self, command, input_arguments=None):
+    def __invoke_ssh(self, command, input_arguments=None, elevation_required=False):
         import paramiko
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -221,9 +224,11 @@ class InnvocationState(State, Base):
         from ..base import Base
         base = Base()
 
-        Copier(ssh_client=ssh).copy(input_arguments=input_arguments)
+        Copier(ssh_client=ssh, elevation_required=elevation_required).copy(input_arguments=input_arguments)
 
         command = base._replace_command_string(command=command, path='/tmp', input_arguments=input_arguments)
+        if elevation_required:
+            command = f'sudo {command}'
         ssh_stdin, ssh_stdout, ssh_stderr = ssh.exec_command(command)
         return_code = ssh_stdout.channel.recv_exit_status()
         out = ssh_stdout.read()
@@ -237,16 +242,16 @@ class InnvocationState(State, Base):
             error=err
         )
 
-    def invoke(self, hostinfo, command_type, command, input_arguments=None):
+    def invoke(self, hostinfo, command_type, command, input_arguments=None, elevation_required=False):
         self.hostinfo = hostinfo
         command_type = self.get_remote_executor(command_type)
         result = None
         if command_type == 'powershell':
-            result = self.__invoke_powershell(command, input_arguments=input_arguments)
+            result = self.__invoke_powershell(command, input_arguments=input_arguments, elevation_required=elevation_required)
         elif command_type == 'cmd':
-            result = self.__invoke_cmd(command, input_arguments=input_arguments)
+            result = self.__invoke_cmd(command, input_arguments=input_arguments, elevation_required=elevation_required)
         elif command_type == 'ssh':
-            result = self.__invoke_ssh(command, input_arguments=input_arguments)
+            result = self.__invoke_ssh(command, input_arguments=input_arguments, elevation_required=elevation_required)
         return result
 
 
