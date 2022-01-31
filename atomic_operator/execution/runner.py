@@ -54,17 +54,6 @@ class Runner(Base):
             executor = self.test.dependency_executor_name
         for dependency in self.test.dependencies:
             self.__logger.debug(f"Dependency description: {dependency.description}")
-            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
-                self.__logger.debug(f"Retrieving prerequistes")
-                get_prereq_response = self.execute_process(
-                    command=dependency.get_prereq_command,
-                    executor=executor,
-                    host=host
-                )
-                for key,val in get_prereq_response.items():
-                    if key not in return_dict:
-                        return_dict[key] = {}
-                    return_dict[key].update({'get_prereqs': val})
             if Base.CONFIG.check_prereqs and dependency.prereq_command:
                 self.__logger.debug("Running prerequisite command")
                 response = self.execute_process(
@@ -76,6 +65,19 @@ class Runner(Base):
                     if key not in return_dict:
                         return_dict[key] = {}
                     return_dict[key].update({'prereq_command': val})
+                if return_dict.get('error'):
+                    return return_dict
+            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
+                self.__logger.debug(f"Retrieving prerequistes")
+                get_prereq_response = self.execute_process(
+                    command=dependency.get_prereq_command,
+                    executor=executor,
+                    host=host
+                )
+                for key,val in get_prereq_response.items():
+                    if key not in return_dict:
+                        return_dict[key] = {}
+                    return_dict[key].update({'get_prereqs': val})
         return return_dict
 
     def execute(self, host_name='localhost', executor=None, host=None):
@@ -84,15 +86,20 @@ class Runner(Base):
         return_dict = {}
         self.__logger.debug(f"Using {executor} as executor.")
         if executor:
-            if Base.CONFIG.check_prereqs and self.test.dependencies:
-                return_dict.update(self._run_dependencies(host=host, executor=executor))
-            self.__logger.debug("Running command")
-            response = self.execute_process(
-                command=self.test.executor.command,
-                executor=executor,
-                host=host,
+            if not Base.CONFIG.check_prereqs and not Base.CONFIG.get_prereqs and not Base.CONFIG.cleanup:
+                self.__logger.debug("Running command")
+                response = self.execute_process(
+                    command=self.test.executor.command,
+                    executor=executor,
+                    host=host,
+                    cwd=self.test_path,
                     elevation_requred=self.test.executor.elevation_required
-            if Runner.CONFIG.cleanup and self.test.executor.cleanup_command:
+                )
+                return_dict.update({'command': response})
+            elif Base.CONFIG.check_prereqs or Base.CONFIG.get_prereqs:
+                if self.test.dependencies:
+                    return_dict.update(self._run_dependencies(host=host, executor=executor))
+            elif Runner.CONFIG.cleanup and self.test.executor.cleanup_command:
                 self.__logger.debug("Running cleanup command")
                 cleanup_response = self.execute_process(
                     command=self.test.executor.cleanup_command,
