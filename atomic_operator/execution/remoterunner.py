@@ -26,7 +26,7 @@ class RemoteRunner(Runner):
         self.test = atomic_test
         self.test_path = test_path
 
-    def execute_process(self, command, executor=None, host=None, cwd=None):
+    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_required=False):
         """Main method to execute commands using state machine
 
         Args:
@@ -44,7 +44,7 @@ class RemoteRunner(Runner):
                     self.state = self.state.on_event(executor, command)
                 if str(self.state) == 'InnvocationState':
                     self.__logger.debug('Running InnvocationState on_event')
-                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments)
+                    self.state = self.state.invoke(host, executor, command, input_arguments=self.test.input_arguments, elevation_required=elevation_required)
                 if str(self.state) == 'ParseResultsState':
                     self.__logger.debug('Running ParseResultsState on_event')
                     final_state = self.state.on_event()
