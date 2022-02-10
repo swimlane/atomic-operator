@@ -1,11 +1,15 @@
 import os
+import inspect
 
 from .base import Base
 from .models import (
     Config
 )
 from .configparser import ConfigParser
-from .utils.exceptions import AtomicsFolderNotFound
+from .utils.exceptions import (
+    AtomicsFolderNotFound,
+    IncorrectParameters
+)
 from .execution import (
     LocalRunner,
     RemoteRunner,
@@ -76,6 +80,16 @@ class AtomicOperator(Base):
         else:
             if os.path.exists(self.get_abs_path(value)):
                 return self.get_abs_path(value)
+
+    def __check_arguments(self, kwargs, method):
+        if kwargs:
+            for arguments in inspect.getfullargspec(method):
+                if isinstance(arguments, list):
+                    for arg in arguments:
+                        for key,val in kwargs.items():
+                            if key in arg:
+                                return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
+            return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
     def __run_technique(self, technique, **kwargs):
         """This method is used to run defined Atomic tests within 
@@ -188,11 +202,23 @@ class AtomicOperator(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
+        response = self.__check_arguments(kwargs, self.run)
+        if response:
+            return response
         if kwargs.get('help'):
             return self.help(method='run')
         if debug:
             import logging
             logging.getLogger().setLevel(logging.DEBUG)
+        count = 0
+        if check_prereqs:
+            count += 1
+        if get_prereqs:
+            count += 1
+        if cleanup:
+            count += 1
+        if count > 1:
+            return IncorrectParameters(f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs','cleanup'.")
         atomics_path = self.__find_path(atomics_path)
         if not atomics_path:
             return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
