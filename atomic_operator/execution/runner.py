@@ -93,7 +93,7 @@ class Runner(Base):
                     executor=executor,
                     host=host,
                     cwd=self.test_path,
-                    elevation_requred=self.test.executor.elevation_required
+                    elevation_required=self.test.executor.elevation_required
                 )
                 return_dict.update({'command': response})
             elif Base.CONFIG.check_prereqs or Base.CONFIG.get_prereqs:
@@ -115,5 +115,5 @@ class Runner(Base):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_requred=False):
+    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_required=False):
         raise NotImplementedError
