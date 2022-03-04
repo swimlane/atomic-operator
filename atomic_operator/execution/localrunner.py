@@ -18,13 +18,14 @@ class LocalRunner(Runner):
         self.test_path = test_path
         self.__local_system_platform = self.get_local_system_platform()
 
-    def execute_process(self, command, executor=None, host=None, cwd=None):
+    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_required=False):
         """Executes commands using subprocess
 
         Args:
             executor (str): An executor or shell used to execute the provided command(s)
             command (str): The commands to run using subprocess
             cwd (str): A string which indicates the current working directory to run the command
+            elevation_required (bool): Whether or not elevation is required
 
         Returns:
             tuple: A tuple of either outputs or errors from subprocess
