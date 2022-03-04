@@ -29,6 +29,15 @@ class LocalRunner(Runner):
         Returns:
             tuple: A tuple of either outputs or errors from subprocess
         """
+        if elevation_required:
+            if executor in ['powershell']:
+                command = f"Start-Process PowerShell -Verb RunAs; {command}"
+            elif executor in ['cmd', 'command_prompt']:
+                command = f'cmd.exe /c "{command}"'
+            elif executor in ['sh', 'bash', 'ssh']:
+                command = f"sudo {command}"
+            else:
+                self.__logger.warning(f"Elevation is required but the executor '{executor}' is unknown!")
         command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments)
         p = subprocess.Popen(
             executor, 
