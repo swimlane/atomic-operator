@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.8.4 - 2022-03-25
+
+    * Updated formatting of executor for AWS and local runners
+    * Updated documentation
+    * Added formatting constants to base class to improve updating of windows variables on command line runners
+
 ## 0.7.0 - 2022-01-04
 
     * Updated argument handling in get_atomics Retrieving Atomic Tests with specified destination in /opt throws unexpected keyword argument error #28
