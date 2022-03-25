@@ -146,7 +146,7 @@ class InnvocationState(State, Base):
             self.__create_win_client(self.hostinfo)
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
         Copier(windows_client=self.__win_client, elevation_required=elevation_required).copy(input_arguments)
-        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
+        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments, executor='command_prompt')
         if elevation_required:
             command = f'runas /user:{self.hostinfo.username}:{self.hostinfo.password} cmd.exe; {command}'
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING CMD
@@ -173,7 +173,7 @@ class InnvocationState(State, Base):
 
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
         Copier(windows_client=self.__win_client, elevation_required=elevation_required).copy(input_arguments=input_arguments)
-        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments)
+        command = self._replace_command_string(command, path='c:/temp', input_arguments=input_arguments, executor='powershell')
         # TODO: NEED TO ADD LOGIC TO TRANSFER FILES TO WINDOWS SYSTEMS USING POWERSHELL
         if elevation_required:
             command = f'Start-Process PowerShell -Verb RunAs; {command}'

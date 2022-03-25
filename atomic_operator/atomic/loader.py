@@ -45,9 +45,14 @@ class Loader(Base):
             with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f.read())
         except:
+            self.__logger.warning(f"Unable to load technique in '{path_to_dir}'")
+            
+        try:
             # windows does not like get_abs_path so casting to string
             with open(str(path_to_dir), 'r', encoding="utf-8") as f:
                 return yaml.safe_load(f.read())
+        except OSError as oe:
+            self.__logger.warning(f"Unable to load technique in '{path_to_dir}': {oe}")
 
     def load_techniques(self) -> dict:
         """The main entrypoint when loading techniques from disk.
@@ -74,6 +79,7 @@ class Loader(Base):
             technique = self.__get_file_name(atomic_entry)
             if not self.__techniques.get(technique):
                 loaded_technique = self.load_technique(str(atomic_entry))
-                loaded_technique.update({'path': os.path.dirname(str(atomic_entry))})
-                self.__techniques[technique] = Atomic(**loaded_technique)
+                if loaded_technique:
+                    loaded_technique.update({'path': os.path.dirname(str(atomic_entry))})
+                    self.__techniques[technique] = Atomic(**loaded_technique)
         return self.__techniques
