@@ -31,6 +31,11 @@ class Base(metaclass=LoggingBase):
             'macos': '/bin/bash'
         }
     }
+    VARIABLE_REPLACEMENTS = {
+        'command_prompt': {
+            '%temp%': "$env:TEMP"
+        }
+    }
     _replacement_strings = [
         '#{{{0}}}',
         '${{{0}}}'
@@ -110,7 +115,7 @@ Inputs for {title}:
             pass
         return string
 
-    def _replace_command_string(self, command: str, path:str, input_arguments: list=[]):
+    def _replace_command_string(self, command: str, path:str, input_arguments: list=[], executor=None):
         if command:
             command = self._path_replacement(command, path)
             if input_arguments:
@@ -121,6 +126,12 @@ Inputs for {title}:
                         except:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
+                    if executor and self.VARIABLE_REPLACEMENTS.get(executor):
+                        for key,val in self.VARIABLE_REPLACEMENTS[executor].items():
+                            try:
+                                command = command.replace(key, val)
+                            except:
+                                pass
         return self._path_replacement(command, path)
 
     def _check_if_aws(self, test):
@@ -146,6 +157,12 @@ Inputs for {title}:
             if Base.CONFIG.prompt_for_input_args:
                 for input in test.input_arguments:
                     input.value = self.prompt_user_for_input(test.name, input)
+            for key,val in self.VARIABLE_REPLACEMENTS.items():
+                if test.executor.name == key:
+                    for k,v in val.items():
+                        for input in test.input_arguments:
+                            if k in input.default:
+                                input.value = input.default.replace(k,v)
             for input in test.input_arguments:
                 if input.value == None:
                     input.value = input.default
