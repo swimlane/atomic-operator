@@ -15,13 +15,11 @@ def read(rel_path: str) -> str:
         return fp.read()
 
 
-def get_version(rel_path: str) -> str:
-    for line in read(rel_path).splitlines():
-        if line.startswith("__version__"):
-            # __version__ = "0.9"
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    raise RuntimeError("Unable to find version string.")
+here = os.path.abspath(os.path.dirname(__file__))
+
+about = {}
+with open(os.path.join(here, 'atomic_operator', '__meta__.py'), 'r', 'utf-8') as f:
+    exec(f.read(), about)
 
 
 PROJECT_URLS = {
@@ -52,11 +50,11 @@ CLASSIFIERS = [
 ]
 
 setup(
-    name='atomic-operator',
-    version=get_version("atomic_operator/__init__.py"),
+    name=about['__title__'],
+    version=about['__version__'],
     packages=find_packages(exclude=['tests*']),
-    license='MIT',
-    description='A python package to execute Atomic tests',
+    license=about['__license__'],
+    description=about['__description__'],
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
     project_urls=PROJECT_URLS,
@@ -76,13 +74,12 @@ setup(
         'paramiko>=2.7.2; python_version >= "3.6"',
         'pick>=1.2.0; python_version >= "3.6"'
     ],
-    #install_requires=parse_requirements('./requirements.txt'),
     keywords=['atomic-red-team', 'att&ck', 'test', 'mitre', 'executor'],
-    url='https://github.com/swimlane/atomic-operator',
-    author='MSAdministrator',
-    author_email='rickardja@live.com',
-    maintainer='MSAdministrator',
-    maintainer_email='rickardja@live.com',
+    url=about['__url__'],
+    author=about['__author__'],
+    author_email=about['__author_email__'],
+    maintainer=about['__maintainer__'],
+    maintainer_email=about['__maintainer_email__'],
     python_requires='>=3.6, <4',
     classifiers=CLASSIFIERS,
     package_data={
