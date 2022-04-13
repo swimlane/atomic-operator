@@ -18,7 +18,7 @@ def read(rel_path: str) -> str:
 here = os.path.abspath(os.path.dirname(__file__))
 
 about = {}
-with open(os.path.join(here, 'atomic_operator', '__meta__.py'), 'r', 'utf-8') as f:
+with open(os.path.join(here, 'atomic_operator', '__meta__.py'), 'r') as f:
     exec(f.read(), about)
 
 
