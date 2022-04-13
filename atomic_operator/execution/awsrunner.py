@@ -41,12 +41,13 @@ class AWSRunner(Runner):
             if executor in ['powershell']:
                 command = f"Start-Process PowerShell -Verb RunAs; {command}"
             elif executor in ['cmd', 'command_prompt']:
-                command = f'cmd.exe /c "{command}"'
+                command = f'{self.command_map.get(executor).get(self.__local_system_platform)} /c "{command}"'
             elif executor in ['sh', 'bash', 'ssh']:
                 command = f"sudo {command}"
             else:
                 self.__logger.warning(f"Elevation is required but the executor '{executor}' is unknown!")
-        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments)
+        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments, executor=executor)
+        executor = self.command_map.get(executor).get(self.__local_system_platform)
         p = subprocess.Popen(
             executor, 
             shell=False, 
@@ -89,5 +90,5 @@ class AWSRunner(Runner):
     def start(self):
         response = self.__check_for_aws_cli()
         if not response.get('error'):
-            return self.execute(executor=self._get_executor_command())
+            return self.execute(executor=self.test.executor.name)
         return response

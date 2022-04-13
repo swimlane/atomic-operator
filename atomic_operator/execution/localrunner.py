@@ -39,7 +39,8 @@ class LocalRunner(Runner):
                 command = f"sudo {command}"
             else:
                 self.__logger.warning(f"Elevation is required but the executor '{executor}' is unknown!")
-        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments)
+        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments, executor=executor)
+        executor = self.command_map.get(executor).get(self.__local_system_platform)
         p = subprocess.Popen(
             executor, 
             shell=False, 
@@ -81,4 +82,4 @@ class LocalRunner(Runner):
         return __executor
 
     def start(self):
-        return self.execute(executor=self._get_executor_command())
+        return self.execute(executor=self.test.executor.name)

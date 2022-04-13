@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.8.4 - 2022-03-25
+
+    * Updated formatting of executor for AWS and local runners
+    * Updated documentation
+    * Added formatting constants to base class to improve updating of windows variables on command line runners
+
 ## 0.7.0 - 2022-01-04
 
     * Updated argument handling in get_atomics Retrieving Atomic Tests with specified destination in /opt throws unexpected keyword argument error #28
@@ -22,11 +28,14 @@
     * Updating handling of passing --help to the run command
     * Updated docs to reflect change
 
-## 0.5.0 - 2021-11-19
+## 0.5.0 - 2021-11-18
 
-    * Updated and expanded tests
-    * Added CI to build docs and deploy to pypi
-    * Updated localrunner to support windows based on changes made previously
+    * Updated handling of versioning
+    * Updated CI to handle versioning of docs and deployment on release
+    * Added better handling of extracting zip file
+    * Added safer loading of yaml files
+    * Update docs
+    * Improved logging across the board and implemented a debug switch
 
 ## 0.4.0 - 2021-11-15
 
