@@ -262,3 +262,13 @@ class AtomicOperator(Base):
         if return_atomics and __return_atomics:
             return __return_atomics
         return self.__test_responses
+
+    def emulation(self):
+        """Main entry point to run test from the Adversary Emulation Library
+
+        https://github.com/center-for-threat-informed-defense/adversary_emulation_library
+
+        Raises:
+            NotImplemented: _description_
+        """
+        raise NotImplemented("This method is currently not implemented.")
