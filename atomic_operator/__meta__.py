@@ -1,5 +1,5 @@
 __title__ = 'atomic-operator'
-__description__ = 'A python package to execute Atomic tests'
+__description__ = 'A python package to execute Atomic tests or Adversary Emulation Plans'
 __url__ = 'https://github.com/swimlane/atomic-operator'
 __version__ = '1.0.0'
 __author__ = 'Swimlane'
