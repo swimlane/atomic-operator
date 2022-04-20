@@ -38,7 +38,7 @@ Will prompt the user with a selection list of tests associated with that techniq
 
 ## Checking Dependencies
 
-There is an optional paramater that determines if `atomic-operator` should check dependencies or not. By default we do not check dependenicies but if set to `True` we will.
+There is an optional parameter that determines if `atomic-operator` should check dependencies or not. By default we do not check dependenicies but if set to `True` we will.
 
 ```bash
 atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1560.002,T1560.001 --check_dependicies True
@@ -48,7 +48,7 @@ Checking of dependencies means we will run any defined `prereq_command` defined 
 
 ## Get Prerequisities
 
-Another optional paramater deteremines if we retrieve or run any `get_prereq_command` values defined within the Atomic test.
+Another optional parameter deteremines if we retrieve or run any `get_prereq_command` values defined within the Atomic test.
 
 ```bash
 atomic-operator run --atomics-path "~/_Swimlane/atomic-red-team" --techniques T1560.002,T1560.001  --check_dependencies True --get_prereq_command True
