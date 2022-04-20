@@ -3,18 +3,19 @@ from pytest import raises
 from atomic_operator.frameworks.loader import Loader
 from atomic_operator.frameworks.atomic import Atomic
 from atomic_operator.frameworks.atomictest import AtomicTest
-from atomic_operator.frameworks.atomictest import AtomicExecutor
+from atomic_operator.frameworks.base import Executor
 
 
 def test_load_atomic():
     path = os.path.join(os.path.dirname(__file__), 'data', 'test_atomic.yml')
-    data = Loader().load_technique(path)
+    data = Loader().load_yaml(path)
+    print(data)
     data.update({'path': path})
     assert Atomic(**data)
 
 def test_atomic_structure():
     path = os.path.join(os.path.dirname(__file__), 'data', 'test_atomic.yml')
-    data = Loader().load_technique(path)
+    data = Loader().load_yaml(path)
     data.update({'path': path})
     atomic = Atomic(**data)
     assert atomic.attack_technique == 'T1003.007'
@@ -23,7 +24,7 @@ def test_atomic_structure():
 
 def test_atomic_test_structure():
     path = os.path.join(os.path.dirname(__file__), 'data', 'test_atomic.yml')
-    data = Loader().load_technique(path)
+    data = Loader().load_yaml(path)
     data.update({'path': path})
     atomic = Atomic(**data)
     assert isinstance(atomic.atomic_tests, list)
@@ -33,11 +34,11 @@ def test_atomic_test_structure():
         assert test.description
         assert test.supported_platforms
         assert test.auto_generated_guid
-        assert isinstance(test.executor, AtomicExecutor)
+        assert isinstance(test.executor, Executor)
 
 def test_atomic_test_replace_command_strings():
     path = os.path.join(os.path.dirname(__file__), 'data', 'test_atomic.yml')
-    data = Loader().load_technique(path)
+    data = Loader().load_yaml(path)
     data.update({'path': path})
     atomic = Atomic(**data)
     input_arguments = {
