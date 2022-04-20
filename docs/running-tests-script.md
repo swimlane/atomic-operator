@@ -30,7 +30,7 @@ print(art.run(
 
 ## Checking Dependencies
 
-There is an optional paramater that determines if `atomic-operator` should check dependencies or not. By default we do not check dependenicies but if set to `True` we will.
+There is an optional parameter that determines if `atomic-operator` should check dependencies or not. By default we do not check dependenicies but if set to `True` we will.
 
 ```python
 art.run(
@@ -43,7 +43,7 @@ art.run(
 
 ## Get Prerequisities
 
-Another optional paramater deteremines if we retrieve or run any `get_prereq_command` values defined within the Atomic test.
+Another optional parameter deteremines if we retrieve or run any `get_prereq_command` values defined within the Atomic test.
 
 ```python
 art.run(
