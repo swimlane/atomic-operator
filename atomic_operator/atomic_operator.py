@@ -61,7 +61,7 @@ class AtomicOperator(Base):
     def art(self):
         """Redirect entry point to run Atomic Red Team tests
         """
-        return self.atomic_red_team()
+        return self.atomic_red_team
 
     @property
     def atomic_red_team(self):
