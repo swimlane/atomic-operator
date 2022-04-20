@@ -1,21 +1,30 @@
 site_name: atomic-operator
-site_description: This python package is used to execute Atomic Red Team tests (Atomics) across multiple operating system environments.
+site_description: This python package is used to execute Atomic Red Team tests (Atomics) or Adversary Emulation Plans across multiple operating system environments.
 docs_dir: docs
 theme:
   name: 'material'
 nav:
     - Home: 'index.md'
-    - Documentation:
-        - 'Get Atomics': 'atomics.md'
-        - 'Atomic Operator': 'atomic-operator.md'
+    - Frameworks:
+      - Atomic Red Team:
+        - 'Get Atomics': 'get_content.md'
+        - 'Using Atomic Red Team': 'atomic-red-team.md'
         - 'Running Tests on Command Line': 'running-tests-command-line.md'
         - 'Running Tests via Scripts': 'running-tests-script.md'
         - 'Running Tests Remotely On Windows': 'windows-remote.md'
         - 'Running Tests via Configuration File': 'atomic-operator-config.md'
+      - Adversary Emulation Plans:
+        - 'Get Plans': 'get_content.md'
+        - 'Using Adversary Emulation: 'adversary-emulation.md'
+        - 'Running Plans on Command Line': 'running-plans-command-line.md'
+        - 'Running Plans via Scripts': 'running-plans-script.md'
+        - 'Running Plans Remotely On Windows': 'windows-remote.md'
+        - 'Running Plans via Configuration File': 'atomic-operator-config.md'
     - Code Reference:
         'Atomic Operator': 'atomic-operator-ref.md'
         'Data Models': 'models-ref.md'
         'Executors': 'execution-ref.md'
+        'Frameworks': 'frameworks-ref.md'
     - About:
         - 'License': 'LICENSE.md'
         - 'Contributing': 'CONTRIBUTING.md'
