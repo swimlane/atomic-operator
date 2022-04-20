@@ -1,9 +1,9 @@
 import os
 from pytest import raises
-from atomic_operator.atomic.loader import Loader
-from atomic_operator.atomic.atomic import Atomic
-from atomic_operator.atomic.atomictest import AtomicTest
-from atomic_operator.atomic.atomictest import AtomicExecutor
+from atomic_operator.frameworks.loader import Loader
+from atomic_operator.frameworks.atomic import Atomic
+from atomic_operator.frameworks.atomictest import AtomicTest
+from atomic_operator.frameworks.atomictest import AtomicExecutor
 
 
 def test_load_atomic():

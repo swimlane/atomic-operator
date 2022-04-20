@@ -1,8 +1,8 @@
 import os
 from pytest import raises
-from atomic_operator.atomic.loader import Loader
-from atomic_operator.atomic.atomic import Atomic
-from atomic_operator.atomic.atomictest import AtomicTest
+from atomic_operator.frameworks.loader import Loader
+from atomic_operator.frameworks.atomic import Atomic
+from atomic_operator.frameworks.atomictest import AtomicTest
 
 def test_loader_attribute_error():
     with raises(AttributeError):

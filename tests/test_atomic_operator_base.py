@@ -1,7 +1,7 @@
 import os
 from atomic_operator import AtomicOperator
 from atomic_operator.base import Base
-from atomic_operator.atomic.atomictest import AtomicTest, AtomicTestInput
+from atomic_operator.frameworks.atomictest import AtomicTest, AtomicTestInput
 from atomic_operator.models import Config
 
 def test_get_abs_path():
