@@ -1,55 +1,65 @@
 import os
-import attr
+from typing import (
+    List,
+    AnyStr
+)
+from attr import (
+    define,
+    field
+)
+
 from .base import Base
-from .utils.exceptions import AtomicsFolderNotFound
+from .utils.exceptions import ContentFolderNotFound
 
 
-# Setting frozen to True means immutability (static) values once set
-@attr.s(frozen=True)
-class Config:
-
-    """The main configuration class used across atomic-operator
-
-    Raises:
-        AtomicsFolderNotFound: Raised when unable to find the provided atomics_path value
-    """
-
-    atomics_path          = attr.ib()
-    check_prereqs         = attr.ib(default=False)
-    get_prereqs           = attr.ib(default=False)
-    cleanup               = attr.ib(default=False)
-    command_timeout       = attr.ib(default=20)
-    debug                 = attr.ib(default=False)
-    prompt_for_input_args = attr.ib(default=False)
-    kwargs                = attr.ib(default={})
-    copy_source_files     = attr.ib(default=True)
-
-    def __attrs_post_init__(self):
-        object.__setattr__(self, 'atomics_path', self.__get_abs_path(self.atomics_path))
-
-    def __get_abs_path(self, value):
-        return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
-
-    @atomics_path.validator
-    def validate_atomics_path(self, attribute, value):
-        value = self.__get_abs_path(value)
-        if not os.path.exists(value):
-            raise AtomicsFolderNotFound('Please provide a value for atomics_path that exists')
-
-
-@attr.s
+@define
 class Host:
-
-    hostname           = attr.ib(type=str)
-    username           = attr.ib(default=None, type=str)
-    password           = attr.ib(default=None, type=str)
-    verify_ssl         = attr.ib(default=False, type=bool)
-    ssh_key_path       = attr.ib(default=None, type=str)
-    private_key_string = attr.ib(default=None, type=str)
-    port               = attr.ib(default=22, type=int)
-    timeout            = attr.ib(default=5, type=int)
+    hostname: AnyStr = field(default=None)
+    username: AnyStr = field(default=None)
+    password: AnyStr = field(default=None)
+    ssh_key_path: AnyStr = field(default=None)
+    private_key_string: AnyStr = field(default=None)
+    verify_ssl: bool = field(default=False)
+    ssh_port: int = field(default=None)
+    ssh_timeout: int = field(default=None)
+    adversary: AnyStr           = field(default=None)
+    techniques: List            = field(default=[])
+    test_guids: List            = field(default=[])
 
     @ssh_key_path.validator
     def validate_ssh_key_path(self, attribute, value):
         if value:
             Base.get_abs_path(value)
+
+
+# Setting frozen to True means immutability (static) values once set
+@define(frozen=True)
+class Config:
+
+    """The main configuration class used across atomic-operator
+
+    Raises:
+        ContentFolderNotFound: Raised when unable to find the provided content_path value
+    """
+
+    content_path: AnyStr        = field()
+    check_prereqs: bool         = field(default=False)
+    get_prereqs: bool           = field(default=False)
+    cleanup: bool               = field(default=False)
+    command_timeout: int        = field(default=20)
+    debug: bool                 = field(default=False)
+    prompt_for_input_args: bool = field(default=False)
+    kwargs: dict                = field(default={})
+    copy_source_files: bool     = field(default=True)
+
+    def __attrs_post_init__(self):
+        object.__setattr__(self, 'content_path', self.__get_abs_path(self.content_path))
+
+    def __get_abs_path(self, value):
+        return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
+
+    @content_path.validator
+    def validate_atomics_path(self, attribute, value):
+        value = self.__get_abs_path(value)
+        if not os.path.exists(value):
+            raise ContentFolderNotFound('Please provide a value for content_path that exists')
