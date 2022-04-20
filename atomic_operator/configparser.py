@@ -2,12 +2,12 @@ import os
 from .base import Base
 from .utils.exceptions import MalformedFile
 from .models import Host
-from .atomic.loader import Loader
+from .frameworks.loader import Loader
 
 
 class ConfigParser(Base):
 
-    def __init__(self, config_file=None, techniques=None, test_guids=None, 
+    def __init__(self, config_file=None, adversary=None, techniques=None, test_guids=None, 
                        host_list=None, username=None, password=None,
                        ssh_key_path=None, private_key_string=None, verify_ssl=False,
                        ssh_port=22, ssh_timeout=5, select_tests=False
@@ -65,6 +65,7 @@ class ConfigParser(Base):
         ]
         """
         self.__config_file = self.__load_config(config_file)
+        self.adversary = adversary
         self.techniques = techniques
         self.test_guids = test_guids
         self.select_tests = select_tests
@@ -87,10 +88,10 @@ class ConfigParser(Base):
             config_file = self.get_abs_path(config_file)
             if not os.path.exists(config_file):
                 raise FileNotFoundError('Please provide a config_file path that exists')
-            from .atomic.loader import Loader
-            config = Loader().load_technique(config_file)
-            if not config.get('atomic_tests') and not isinstance(config, list):
-                raise MalformedFile('Please provide one or more atomic_tests within your config_file')
+            from .frameworks.loader import Loader
+            config = Loader().load_yaml(config_file)
+            if not config.get('atomic_tests') and not isinstance(config, list) and not config.get('adversary_emulation'):
+                raise MalformedFile('Please provide one or more atomic_tests or adversary_emulation within your config_file')
             return config
         return {}
 
@@ -132,21 +133,20 @@ class ConfigParser(Base):
                 timeout=ssh_timeout
             )
 
-    def __parse_test_guids(self, _config_file):
-        test_dict = {}
+    def __parse_test_guids(self):
+        atomic_test_dict = {}
         return_list = []
-        if _config_file:
-            for item in _config_file['atomic_tests']:
-                if item.get('guid'):
-                    if item['guid'] not in test_dict:
-                        test_dict[item['guid']] = []
-                    if item.get('inventories') and _config_file.get('inventory'):
-                        # process inventories to run commands remotely
-                        for inventory in item['inventories']:
-                            if _config_file['inventory'].get(inventory):
-                                test_dict[item['guid']] = self.__parse_hosts(_config_file['inventory'][inventory])
-        if test_dict:
-            for key,val in test_dict.items():
+        for item in self.__config_file['atomic_tests']:
+            if item.get('guid'):
+                if item['guid'] not in atomic_test_dict:
+                    atomic_test_dict[item['guid']] = []
+                if item.get('inventories') and self.__config_file.get('inventory'):
+                    # process inventories to run commands remotely
+                    for inventory in item['inventories']:
+                        if self.__config_file['inventory'].get(inventory):
+                            atomic_test_dict[item['guid']] = self.__parse_hosts(self.__config_file['inventory'][inventory])
+        if atomic_test_dict:
+            for key,val in atomic_test_dict.items():
                 for item in self.__build_run_list(
                     test_guids=[key],
                     host_list=val
@@ -154,10 +154,37 @@ class ConfigParser(Base):
                     return_list.append(item)
         return return_list
 
-    def __build_run_list(self, techniques=None, test_guids=None, host_list=None, select_tests=False):
+    def __parse_emulation_plan(self):
+        emulation_test_dict = {}
+        return_list = []
+        for item in self.__config_file['adversary_emulation']:
+            if item.get('name'):
+                if item['name'] not in emulation_test_dict:
+                    emulation_test_dict[item['name']] = []
+                if item.get('inventories') and self.__config_file.get('inventory'):
+                    # process inventories to run commands remotely
+                    for inventory in item['inventories']:
+                        if self.__config_file['inventory'].get(inventory):
+                            emulation_test_dict[item['name']] = self.__parse_hosts(self.__config_file['inventory'][inventory])
+
+        if emulation_test_dict:
+            for key,val in emulation_test_dict.items():
+                for item in self.__build_run_list(
+                    adversary=key,
+                    host_list=val
+                    ):
+                    return_list.append(item)
+        return return_list
+
+    def __build_run_list(self, techniques=None, test_guids=None, host_list=None, select_tests=False, adversary=None):
         __run_list = []
-        self.__loaded_techniques = Loader().load_techniques()
-        if test_guids:
+        self.__loaded_techniques = Loader().load()
+        if adversary:
+            for key,val in self.__loaded_techniques.items():
+                if key.upper() == adversary.upper():
+                    val.hosts = host_list
+                    __run_list.append(val)
+        elif test_guids:
             for key,val in self.__loaded_techniques.items():
                 test_list = []
                 for test in val.atomic_tests:
@@ -249,11 +276,16 @@ class ConfigParser(Base):
             [list]: A list of modified Atomic objects that will be used to run 
                     either remotely or locally.
         """
+        self.__logger.info(f"Building run list.")
         __run_list = []
         if self.__config_file:
-            __run_list = self.__parse_test_guids(self.__config_file)
+            if self.__config_file.get('atomic_tests'):
+                __run_list = self.__parse_test_guids()
+            elif self.__config_file.get('adversary_emulation'):
+                __run_list = self.__parse_emulation_plan()
 
         for item in self.__build_run_list(
+            adversary=self.adversary if self.adversary else None,
             techniques=self.parse_input_lists(self.techniques) if self.techniques else [],
             test_guids=self.parse_input_lists(self.test_guids) if self.test_guids else [],
             host_list=self.__host_list,

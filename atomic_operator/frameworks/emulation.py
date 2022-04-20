@@ -18,6 +18,7 @@ from .base import (
     InputArguments
 )
 from .semversion import SemVersion
+from ..models import Host
 
 
 @define
@@ -47,13 +48,14 @@ class EmulationPhase(TestBase):
     id: AnyStr = field()
     tactic: AnyStr = field()
     technique: Technique = field()
-    cti_source: HttpUrl = field()
-    procedure_group: AnyStr = field(validator=validators.in_['procedure_discovery', 'procedure_privesc', 'procedure_cred_access', 'procedure_collection', 'procedure_exfiltration', 'procedure_pos_execution', 'procedure_pos_persistence', 'procedure_pos_exfiltration', 'procedure_ransomware_distribution', 'procedure_lateral_movement', 'procedure_ransomware_copy', 'procedure_ransomware_distribute', 'procedure_ransomware_execute_wmic', 'procedure_ransomware_execute_psexec', 'procedure_ransomware_psexec'])
+    procedure_group: AnyStr = field()
     procedure_step: SemVersion = field()
     platforms: WindowsPlatform = field()
+    cti_source: HttpUrl = field(default=None)
     input_arguments                             = field(default=None)
     dependency_executor_name                    = field(default=None)
     dependencies: List[Dependency] = field(default=[])
+    executors: List[Executor] = field(default=[])
 
     def __attrs_post_init__(self):
         if self.input_arguments:
@@ -64,13 +66,14 @@ class EmulationPhase(TestBase):
                 argument_dict.update({'name': key, 'value': val.get('default')})
                 temp_list.append(InputArguments(**argument_dict))
             self.input_arguments = temp_list
-        if self.executor:
-            executor_dict = self.executor
-            if executor_dict.get('name') == 'manual':
-                if not executor_dict.get('command'):
-                    executor_dict['command'] = ''
-            self.executor = Executor(**executor_dict)
-            executor_dict = None
+        if self.executors:
+            executor_list = []
+            for executor in self.executors:
+                if executor.get('name') == 'manual':
+                    if not executor.get('command'):
+                        executor['command'] = ''
+                executor_list.append(Executor(**executor))
+            self.executors = executor_list
         else:
             self.executor = []
         if self.dependencies:
@@ -87,3 +90,6 @@ class EmulationPlanDetails:
     adversary_description: AnyStr = field()
     attack_version: int = field()
     format_version: int = field()
+    path: AnyStr = field()
+    phases: List[EmulationPhase] = field()
+    hosts: List[Host] = field(default=[])

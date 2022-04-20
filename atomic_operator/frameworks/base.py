@@ -1,5 +1,6 @@
 from typing import (
     AnyStr,
+    List
 )
 from attr import (
     define,
@@ -38,4 +39,3 @@ class InputArguments:
 class TestBase:
     name: AnyStr = field()
     description: AnyStr = field()
-    executor: Executor = field()

@@ -1,21 +1,26 @@
-import os
-import typing
+from typing import (
+    AnyStr,
+    List
+)
+from attr import (
+    define,
+    field,
+)
 from .atomictest import AtomicTest
 from ..models import Host
-import attr
 
 
-@attr.s
+@define
 class Atomic:
     """A single Atomic data structure. Each Atomic (technique)
     will contain a list of one or more AtomicTest objects.
     """
 
-    attack_technique                      = attr.ib()
-    display_name                          = attr.ib()
-    path                                  = attr.ib()
-    atomic_tests: typing.List[AtomicTest] = attr.ib()
-    hosts: typing.List[Host]              = attr.ib(default=None)
+    attack_technique: AnyStr = field()
+    display_name: AnyStr = field()
+    path: AnyStr = field()
+    atomic_tests: List[AtomicTest] = field()
+    hosts: List[Host] = field(default=[])
 
     def __attrs_post_init__(self):
         if self.atomic_tests:
