@@ -129,8 +129,8 @@ class ConfigParser(Base):
                 ssh_key_path=ssh_key_path,
                 private_key_string=private_key_string,
                 verify_ssl=verify_ssl,
-                port=ssh_port,
-                timeout=ssh_timeout
+                ssh_port=ssh_port,
+                ssh_timeout=ssh_timeout
             )
 
     def __parse_test_guids(self):
