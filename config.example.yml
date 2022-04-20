@@ -21,6 +21,15 @@ inventory:
       - 192.168.1.1
       - 10.32.100.1
       # etc.
+adversary_emulation:
+  - name: APT29
+    input_arguments:
+      output_file:
+        value: custom_output.txt
+      input_file:
+        value: custom_input.txt
+    inventories:
+      - windows1
 atomic_tests:
   - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
     input_arguments:
