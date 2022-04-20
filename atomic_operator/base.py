@@ -12,6 +12,7 @@ class Base(metaclass=LoggingBase):
 
     CONFIG = None
     ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
+    ADVERSARY_EMULATION_LIBRARY_REPO = 'https://github.com/center-for-threat-informed-defense/adversary_emulation_library/zipball/master/'
     command_map = {
         'command_prompt': {
             'windows': 'C:\\Windows\\System32\\cmd.exe',
@@ -41,7 +42,7 @@ class Base(metaclass=LoggingBase):
         '${{{0}}}'
     ]
 
-    def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
+    def download_github_repo(self, save_path, type, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
 
         Args:
@@ -50,7 +51,13 @@ class Base(metaclass=LoggingBase):
         Returns:
             str: A string of the location the data was saved to.
         """
-        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
+        if type == 'atomic-red-team':
+            url = Base.ATOMIC_RED_TEAM_REPO
+        elif type == 'adversary-emulation':
+            url = Base.ADVERSARY_EMULATION_LIBRARY_REPO
+        else:
+            raise ValueError(f"You provided an unknown type value when trying to download a github report: {type}")
+        response = requests.get(url, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
         with zipfile.ZipFile(BytesIO(response.content)) as zf:
             for member in zf.infolist():
@@ -135,16 +142,22 @@ Inputs for {title}:
         return self._path_replacement(command, path)
 
     def _check_if_aws(self, test):
-        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
-            return True
+        if hasattr(test, 'supported_platforms'):
+            if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+                return True
         return False
 
     def _check_platform(self, test, show_output=False) -> bool:
         if self._check_if_aws(test):
             return True
-        if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
-            return False
+        if hasattr(test, 'supported_platforms'):
+            if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
+                self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
+                return False
+        elif hasattr(test, 'platforms'):
+            if test.platforms and self.get_local_system_platform() not in test.platforms:
+                self.__logger.info(f"You provided a test ({test.id}) '{test.name}' which is not supported on this platform. Skipping...")
+                return False
         return True
 
     def _set_input_arguments(self, test, **kwargs):

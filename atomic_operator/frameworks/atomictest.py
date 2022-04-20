@@ -23,6 +23,7 @@ class AtomicTest(TestBase):
     """
     supported_platforms:      AnyStr = field()
     auto_generated_guid:      AnyStr = field()
+    executor: Executor = field()
     input_arguments                  = field(default=None)
     dependency_executor_name: AnyStr = field(default=None)
     dependencies:             List[Dependency] = field(default=[])
