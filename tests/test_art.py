@@ -1,5 +1,5 @@
 import os
-from atomic_operator.atomic.loader import Loader
+from atomic_operator.frameworks.loader import Loader
 from atomic_operator.configparser import ConfigParser
 
 
