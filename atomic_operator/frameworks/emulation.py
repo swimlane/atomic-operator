@@ -58,6 +58,8 @@ class EmulationPhase(TestBase):
     executors: List[Executor] = field(default=[])
 
     def __attrs_post_init__(self):
+        if self.technique:
+            self.technique = Technique(**self.technique)
         if self.input_arguments:
             temp_list = []
             for key,val in self.input_arguments.items():
