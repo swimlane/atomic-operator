@@ -3,9 +3,10 @@ import inspect
 
 from .base import Base
 from .models import (
-    Config
+    Config,
+    ConfigFile,
+    Host
 )
-from .configparser import ConfigParser
 from .utils.exceptions import (
     ContentFolderNotFound,
     IncorrectParameters
@@ -15,6 +16,7 @@ from .execution import (
     RemoteRunner,
     AWSRunner
 )
+from .runlist import RunList
 
 
 class AtomicRedTeam(Base):
@@ -91,7 +93,7 @@ class AtomicRedTeam(Base):
                                 return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
             return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
-    def __run_technique(self, technique, **kwargs):
+    def __run_technique(self, technique):
         """This method is used to run defined Atomic tests within 
            a MITRE ATT&CK Technique.
 
@@ -101,7 +103,6 @@ class AtomicRedTeam(Base):
         """
         self.__logger.debug(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
-            self._set_input_arguments(test, **kwargs)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
@@ -132,7 +133,7 @@ class AtomicRedTeam(Base):
                         )
                     else:
                         self.__test_responses[test.auto_generated_guid].update(
-                            LocalRunner(test, technique.path).start()
+                            LocalRunner(test, technique.path).execute()
                         )
             if self.__test_responses.get(test.auto_generated_guid):
                 self.__test_responses[test.auto_generated_guid].update({
@@ -146,25 +147,25 @@ class AtomicRedTeam(Base):
         obj = AtomicRedTeam if not method else getattr(self, method)
         return HelpText(self.run,trace=FireTrace(obj))
 
-    def get_content(self, desintation=os.getcwd(), **kwargs):
+    def get_content(self, destination=os.getcwd(), **kwargs):
         """Downloads the RedCanary atomic-red-team repository to your local system.
 
         Args:
-            desintation (str, optional): A folder path to download the repositorty data to. Defaults to os.getcwd().
+            destination (str, optional): A folder path to download the repository data to. Defaults to os.getcwd().
             kwargs (dict, optional): This kwargs will be passed along to Python requests library during download. Defaults to None.
 
         Returns:
             str: The path the data can be found at.
         """
-        if not os.path.exists(desintation):
-            os.makedirs(desintation)
-        desintation = kwargs.pop('destination') if kwargs.get('destination') else desintation
+        if not os.path.exists(destination):
+            os.makedirs(destination)
+        destination = kwargs.pop('destination') if kwargs.get('destination') else destination
         folder_name = self.download_github_repo(
-            save_path=desintation, 
+            save_path=destination, 
             type='atomic-red-team',
             **kwargs
         )
-        return os.path.join(desintation, folder_name)
+        return os.path.join(destination, folder_name)
 
     def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
                   content_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
@@ -188,7 +189,7 @@ class AtomicRedTeam(Base):
             debug (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
             return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
-            config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
+            config_file (str, optional): A path to a config_file which is used to automate atomic-operator in environments. Default to None.
             config_file_only (bool, optional): Whether or not you want to run tests based on the provided config_file only. Defaults to False.
             hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
             username (str, optional): Username for authentication of remote connections. Defaults to None.
@@ -234,30 +235,34 @@ class AtomicRedTeam(Base):
             kwargs                = kwargs,
             copy_source_files     = copy_source_files
         )
-        # taking inputs from both config_file and passed in values via command
-        # line to build a run_list of objects
-        self.__config_parser = ConfigParser(
-                config_file=config_file,
-                techniques=None if config_file_only else self.parse_input_lists(techniques),
-                test_guids=None if config_file_only else self.parse_input_lists(test_guids),
-                host_list=None if config_file_only else self.parse_input_lists(hosts),
-                username=username,
-                password=password,
-                ssh_key_path=ssh_key_path,
-                private_key_string=private_key_string,
-                verify_ssl=verify_ssl,
-                ssh_port=ssh_port,
-                ssh_timeout=ssh_timeout,
-                select_tests=select_tests
-            )
-        self.__run_list = self.__config_parser.run_list
+        host_list = []
+        hosts = self.parse_input_lists(hosts) if hosts else None
+        hosts = None if config_file_only else hosts
+        if hosts:
+            for host in hosts:
+                self.__logger.info(host)
+                host_list.append(Host(
+                    hostname=host,
+                    username=username,
+                    password=password,
+                    ssh_key_path=ssh_key_path,
+                    private_key_string=private_key_string,
+                    verify_ssl=verify_ssl,
+                    ssh_port=ssh_port,
+                    ssh_timeout=ssh_timeout
+                ))
+
+        self.__run_list = RunList(
+            techniques=self.parse_input_lists(techniques),
+            test_guids=self.parse_input_lists(test_guids),
+            host_list=host_list,
+            config_file=ConfigFile(**self.load_yaml(config_file)) if config_file else None
+        ).build()
 
         __return_atomics = []
         for item in self.__run_list:
             if return_atomics:
                 __return_atomics.append(item)
-            elif kwargs.get('kwargs'):
-                self.__run_technique(item, **kwargs.get('kwargs'))
             else:
                 self.__run_technique(item)
         if return_atomics and __return_atomics:
