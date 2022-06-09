@@ -16,7 +16,7 @@ from .execution import (
     LocalRunner,
     RemoteRunner,
 )
-from .serializer import RunList
+from .runlist import RunList
 
 
 class AdversaryEmulationLibrary(Base):
