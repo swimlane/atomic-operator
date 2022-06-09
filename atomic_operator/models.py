@@ -162,3 +162,10 @@ class ConfigFile:
                 )
             self.inventory = return_list
 
+
+class RunList:
+    adversary: AnyStr = field(factory=str)
+    techniques: List = field(factory=list)
+    test_guids: List = field(factory=list)
+    host_list: List[Host] = field(factory=list)
+    config_file: ConfigFile = field(factory=ConfigFile)
