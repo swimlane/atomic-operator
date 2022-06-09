@@ -17,7 +17,11 @@ class Runner(Base):
         """
         if data:
             # Remove Windows CLI garbage
-            data = re.sub(r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", "", data.decode("utf-8", "ignore"))
+            data = re.sub(
+                r"Microsoft\ Windows\ \[version .+\]\r?\nCopyright.*(\r?\n)+[A-Z]\:.+?\>", 
+                "", 
+                data.decode("utf-8", "ignore")
+            )
             # formats strings with newline and return characters
             return re.sub(r"(\r?\n)*[A-Z]\:.+?\>", "", data)
 
@@ -32,88 +36,27 @@ class Runner(Base):
         """
         return_dict = {}
         if return_code == 127:
-            return_dict['error'] =  f"\n\nCommand Not Found: {command} returned exit code {return_code}: \nErrors: {self.clean_output(errors)}/nOutput: {output}"
-            self.__logger.warning(return_dict['error'])
+            self.__logger.warning(
+                f"\n\nCommand Not Found: {command} returned exit code {return_code}: \nErrors: "
+                f"{self.clean_output(errors)}/nOutput: {output}"
+            )
             return return_dict
         if output or errors:
             if output:
                 return_dict['output'] = self.clean_output(output)
-                self.__logger.info("\n\nOutput: {}".format(return_dict['output']))
+                self.__logger.info(f"\n\nOutput: {return_dict['output']}")
             else:
-                return_dict['error'] =  f"\n\nCommand: {command} returned exit code {return_code}: \n{self.clean_output(errors)}"
-                self.__logger.warning(return_dict['error'])
+                self.__logger.warning(
+                    f"\n\nCommand: {command} returned exit code {return_code}: \n{self.clean_output(errors)}"
+                )
         else:
             self.__logger.info("(No output)")
         return return_dict
 
-    def _run_dependencies(self, host=None, executor=None):
-        """Checking dependencies
-        """
-        return_dict = {}
-        if self.test.dependency_executor_name:
-            executor = self.test.dependency_executor_name
-        for dependency in self.test.dependencies:
-            self.__logger.debug(f"Dependency description: {dependency.description}")
-            if Base.CONFIG.check_prereqs and dependency.prereq_command:
-                self.__logger.debug("Running prerequisite command")
-                response = self.execute_process(
-                    command=dependency.prereq_command,
-                    executor=executor,
-                    host=host
-                )
-                for key,val in response.items():
-                    if key not in return_dict:
-                        return_dict[key] = {}
-                    return_dict[key].update({'prereq_command': val})
-                if return_dict.get('error'):
-                    return return_dict
-            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
-                self.__logger.debug(f"Retrieving prerequistes")
-                get_prereq_response = self.execute_process(
-                    command=dependency.get_prereq_command,
-                    executor=executor,
-                    host=host
-                )
-                for key,val in get_prereq_response.items():
-                    if key not in return_dict:
-                        return_dict[key] = {}
-                    return_dict[key].update({'get_prereqs': val})
-        return return_dict
-
-    def execute(self, host_name='localhost', executor=None, host=None):
-        """The main method which runs a single AtomicTest object on a local system.
-        """
-        return_dict = {}
-        self.__logger.debug(f"Using {executor} as executor.")
-        if executor:
-            if not Base.CONFIG.check_prereqs and not Base.CONFIG.get_prereqs and not Base.CONFIG.cleanup:
-                self.__logger.debug("Running command")
-                response = self.execute_process(
-                    command=self.test.executor.command,
-                    executor=executor,
-                    host=host,
-                    cwd=self.test_path,
-                    elevation_required=self.test.executor.elevation_required
-                )
-                return_dict.update({'command': response})
-            elif Base.CONFIG.check_prereqs or Base.CONFIG.get_prereqs:
-                if self.test.dependencies:
-                    return_dict.update(self._run_dependencies(host=host, executor=executor))
-            elif Runner.CONFIG.cleanup and self.test.executor.cleanup_command:
-                self.__logger.debug("Running cleanup command")
-                cleanup_response = self.execute_process(
-                    command=self.test.executor.cleanup_command,
-                    executor=executor,
-                    host=host,
-                    cwd=self.test_path
-                )
-                return_dict.update({'cleanup': cleanup_response})
-        return {host_name: return_dict}
-
     @abc.abstractmethod
-    def start(self):
+    def execute(self):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_required=False):
+    def _run(self, command, executor=None, host=None, cwd=None, elevation_required=False):
         raise NotImplementedError
