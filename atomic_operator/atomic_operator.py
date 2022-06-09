@@ -55,7 +55,7 @@ class AtomicOperator(Base):
         from fire.trace import FireTrace
         from fire.helptext import HelpText
         obj = AtomicOperator if not method else getattr(self, method)
-        return HelpText(self.run,trace=FireTrace(obj))
+        return HelpText(self, trace=FireTrace(obj))
 
     @property
     def art(self):
