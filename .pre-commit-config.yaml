@@ -1,0 +1,49 @@
+files: ^aqueduct/
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+    -   id: check-json
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: requirements-txt-fixer
+    -   id: trailing-whitespace
+    -   id: check-docstring-first
+    -   id: fix-encoding-pragma
+    # Remove unused python imports
+-   repo: https://github.com/myint/autoflake
+    rev: v1.4
+    hooks:
+    -   id: autoflake
+        args: [--in-place, --remove-all-unused-imports]
+        # why this we exclude this files?
+        # setup.py if formatted the integration validation fails
+        # conftest.py has intentional unsused imports
+        # test_default.py has intentional unsused imports
+        #
+        # This is the same reason why we exclude this
+        # files on hooks bellow.
+        exclude: "setup.py|conftest.py|test_default.py|__init__.py"
+ #   Sort python imports
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+    -   id: isort
+        args: ["--multi-line", "3", "--profile", "black"]
+        exclude: "setup.py|conftest.py|test_default.py"
+#    black but powered with diff
+-   repo: https://github.com/akaihola/darker
+    rev: 1.5.0
+    hooks:
+    -   id: darker
+        exclude: "setup.py"
+        args: ["--line-length", "120"]
+-   repo: https://github.com/commitizen-tools/commitizen
+    rev: v2.24.0
+    hooks:
+    -   id: commitizen
+        stages: [commit-msg]
+# -   repo: https://github.com/miki725/importanize
+#     rev: '0.7'
+#     hooks:
+#     -   id: importanize
