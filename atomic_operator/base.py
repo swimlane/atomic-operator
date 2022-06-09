@@ -16,14 +16,26 @@ class Base(metaclass=LoggingBase):
     CONFIG = None
     ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
     ADVERSARY_EMULATION_LIBRARY_REPO = 'https://github.com/center-for-threat-informed-defense/adversary_emulation_library/zipball/master/'
-    command_map = {
+    COMMAND_MAP = {
         'command_prompt': {
             'windows': 'C:\\Windows\\System32\\cmd.exe',
             'linux': '/bin/sh',
             'macos': '/bin/sh',
             'default': '/bin/sh'
         },
+        'cmd': {
+            'windows': 'C:\\Windows\\System32\\cmd.exe',
+            'linux': '/bin/sh',
+            'macos': '/bin/sh',
+            'default': '/bin/sh'
+        },
+        'process': {
+            'linux': None
+        },
         'powershell': {
+            'windows': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+        },
+        'pwsh': {
             'windows': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
         },
         'sh': {
