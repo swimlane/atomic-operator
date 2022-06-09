@@ -3,6 +3,7 @@ from typing import (
     List,
     AnyStr
 )
+from pydantic import DirectoryPath
 from attr import (
     define,
     field
@@ -22,9 +23,6 @@ class Host:
     verify_ssl: bool = field(default=False)
     ssh_port: int = field(default=None)
     ssh_timeout: int = field(default=None)
-    adversary: AnyStr           = field(default=None)
-    techniques: List            = field(default=[])
-    test_guids: List            = field(default=[])
 
     @ssh_key_path.validator
     def validate_ssh_key_path(self, attribute, value):
