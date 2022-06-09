@@ -1,13 +1,11 @@
 import os
-from pathlib import Path, PurePath
 
-import yaml
 
-from ..base import Base
 from .atomic import Atomic
+from ..base import Base
 from .emulation import (
-    EmulationPlanDetails,
-    EmulationPhase
+    EmulationPhase,
+    EmulationPlanDetails
 )
 from ..utils.exceptions import ContentFolderNotFound
 
@@ -17,51 +15,19 @@ class Loader(Base):
     __techniques = {}
     TECHNIQUE_DIRECTORY_PATTERN = 'T*'
 
-    def __get_file_name(self, path) -> str:
-        return path.name.rstrip('.yaml')
-
-    def __find_content(self, path, pattern):
-        result = []
-        path = PurePath(path)
-        for p in Path(path).rglob(pattern):
-            result.append(p.resolve())
-        return result
-
-    def load_yaml(self, path_to_dir) -> dict:
-        """Loads a provided yaml file which is typically an Atomic or Emulation plan defintiion or configuration file.
-
-        Args:
-            path_to_dir (str): A string path to a yaml formatted file
-
-        Returns:
-            dict: Returns the loaded yaml file in a dictionary format
-        """
-        try:
-            with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
-                return yaml.safe_load(f.read())
-        except:
-            self.__logger.warning(f"Unable to load technique in '{path_to_dir}'")
-            
-        try:
-            # windows does not like get_abs_path so casting to string
-            with open(str(path_to_dir), 'r', encoding="utf-8") as f:
-                return yaml.safe_load(f.read())
-        except OSError as oe:
-            self.__logger.warning(f"Unable to load technique in '{path_to_dir}': {oe}")
-
     def load(self) -> dict:
         path = Base.CONFIG.content_path
         if not os.path.exists(self.get_abs_path(path)):
             raise ContentFolderNotFound('Unable to find any folders containing content. Please make sure you have provided the correct path.')
         else:
-            content = self.__find_content(path=self.get_abs_path(path), pattern='**/T*/T*.yaml')
+            content = self._find_content(path=self.get_abs_path(path), pattern='**/T*/T*.yaml')
             if not content:
-                content = self.__find_content(path=self.get_abs_path(path), pattern='Emulation_Plan/yaml/*.yaml')
+                content = self._find_content(path=self.get_abs_path(path), pattern='Emulation_Plan/yaml/*.yaml')
                 if not content:
                     raise ContentFolderNotFound('Unable to find any folders containing content. Please make sure you have provided the correct path.')
         for item in content:
-            self.__logger.info(f"Item is {item}")
-            name = self.__get_file_name(item)
+            self.__logger.debug(f"Item is {item}")
+            name = self._get_file_name(item)
             if not self.__techniques.get(name):
                 loaded_technique = self.load_yaml(str(item))
                 if loaded_technique:
