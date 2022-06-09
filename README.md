@@ -80,6 +80,13 @@ pick==1.2.0
 pydantic>=1.9.0
 ```
 
+### Windows
+
+```
+pip install windows-curses
+pip install --upgrade setuptools
+```
+
 ### macOS, Linux and Windows:
 
 ```bash
