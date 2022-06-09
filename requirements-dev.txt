@@ -6,3 +6,8 @@ mkdocs>=1.2.4
 mkdocs-material>=8.2.9
 mkdocs-material-extensions>=1.0.3
 mkdocstrings>=0.18.0
+black
+isort
+flake8
+bandit
+saftey
