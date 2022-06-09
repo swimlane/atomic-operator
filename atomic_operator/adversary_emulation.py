@@ -1,11 +1,13 @@
-import os
 import inspect
+import os
+
 
 from .base import Base
 from .models import (
-    Config
+    Config,
+    ConfigFile,
+    Host,
 )
-from .configparser import ConfigParser
 from .utils.exceptions import (
     ContentFolderNotFound,
     IncorrectParameters
@@ -13,8 +15,8 @@ from .utils.exceptions import (
 from .execution import (
     LocalRunner,
     RemoteRunner,
-    AWSRunner
 )
+from .serializer import RunList
 
 
 class AdversaryEmulationLibrary(Base):
@@ -56,51 +58,59 @@ class AdversaryEmulationLibrary(Base):
                     for arg in arguments:
                         for key,val in kwargs.items():
                             if key in arg:
-                                return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
+                                return IncorrectParameters(
+                                    f"You passed in an argument of '{key}' which is not recognized. "
+                                    f"Did you mean '{arg}'?"
+                                )
             return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
     def __run_emulation(self, emulation, **kwargs):
         """This method is used to run defined Emulation Plans for an adversary.
 
         Args:
-            emulation (EmulationPlanDetails): An Adversary Emulation Plan Details object which contains a list of plan phases.
+            emulation (EmulationPlanDetails): An Adversary Emulation Plan Details object which contains a
+                                              list of plan phases.
         """
         self.__logger.debug(f"Attempting to run Emulation Plan phases for adversary '{emulation.adversary_name}'")
         for phase in emulation.phases:
-            self._set_input_arguments(phase, **kwargs)
             if phase.id not in self.__test_responses:
                 self.__test_responses[phase.id] = {}
-            for executor in phase.executors:
-                if emulation.hosts:
-                    for host in emulation.hosts:
-                        self.__logger.info(f"Running procedure group '{phase.procedure_group} (Step {phase.procedure_step}) for tactic {phase.tactic} and technique {phase.technique.name}")
-                        self.__logger.debug(f"Description: {phase.description}")
-                        if executor.name in ['sh', 'bash']:
-                            self.__test_responses[phase.id].update(
-                                RemoteRunner(phase, emulation.path).start(host=host, executor='ssh')
-                            )
-                        elif executor.name in ['command_prompt']:
-                            self.__test_responses[phase.id].update(
-                                RemoteRunner(phase, emulation.path).start(host=host, executor='cmd')
-                            )
-                        elif executor.name in ['powershell']:
-                            self.__test_responses[phase.id].update(
-                                RemoteRunner(phase, emulation.path).start(host=host, executor='powershell')
-                            )
-                        else:
-                            self.__logger.warning(f"Unable to execute test since the executor is {executor.name}. Skipping.....")
+            if emulation.hosts:
+                raise NotImplementedError(
+                    "Currently remote runner for adversary emulation is not implemented."
+                )
+                for host in emulation.hosts:
+                    self.__logger.info(
+                        f"Running procedure group '{phase.procedure_group} (Step {phase.procedure_step}) for "
+                        f"tactic {phase.tactic} and technique {phase.technique.name}"
+                    )
+                    self.__logger.debug(f"Description: {phase.description}")
+                    if hasattr(phase.platforms, 'sh'):
+                        self.__test_responses[phase.id].update(
+                            RemoteRunner(phase, emulation.path).start(host=host, executor='ssh')
+                        )
+                    elif hasattr(phase.platforms, 'cmd'):
+                        self.__test_responses[phase.id].update(
+                            RemoteRunner(phase, emulation.path).start(host=host, executor='cmd')
+                        )
+                    elif hasattr(phase.platforms, 'psh') or hasattr(phase.platforms, 'pwsh'):
+                        self.__test_responses[phase.id].update(
+                            RemoteRunner(phase, emulation.path).start(host=host, executor='powershell')
+                        )
+                    else:
+                        self.__logger.warning(
+                            f"Unable to execute test since the executor is {getattr(phase, 'platforms')}. Skipping....."
+                        )
+            else:
+                local_platform = self.get_local_system_platform()
+                platform = "windows" if hasattr(phase.platforms, "windows") else "linux" if hasattr(phase.platform, "linux") else "macos"
+                if local_platform == platform:
+                    self.__logger.info(f"Running {phase.name} test ({phase.id}) for technique {phase.technique.name}")
+                    self.__logger.debug(f"Description: {phase.description}")
+                    LocalRunner(test=phase, test_path=emulation.path).execute()
+
                 else:
-                    if self._check_platform(phase, show_output=True):
-                        self.__logger.info(f"Running {phase.name} test ({phase.id}) for technique {phase.technique.name}")
-                        self.__logger.debug(f"Description: {phase.description}")
-                        if self._check_if_aws(phase):
-                            self.__test_responses[phase.id].update(
-                                AWSRunner(phase, emulation.path).start()
-                            )
-                        else:
-                            self.__test_responses[phase.id].update(
-                                LocalRunner(phase, emulation.path).start()
-                            )
+                    self.__logger.info(f"The target platform '{platform}' does not match the local platform '{local_platform}'. Skipping...")
             if self.__test_responses.get(phase.id):
                 self.__test_responses[phase.id].update({
                     'technique_id': phase.technique.attack_id,
@@ -113,28 +123,29 @@ class AdversaryEmulationLibrary(Base):
         obj = AdversaryEmulationLibrary if not method else getattr(self, method)
         return HelpText(self.run,trace=FireTrace(obj))
 
-    def get_content(self, desintation=os.getcwd(), **kwargs):
+    def get_content(self, destination=os.getcwd(), **kwargs):
         """Downloads the Adversary Emulation Plan repository to your local system.
 
         Args:
-            desintation (str, optional): A folder path to download the repositorty data to. Defaults to os.getcwd().
+            destination (str, optional): A folder path to download the repository data to. Defaults to os.getcwd().
             kwargs (dict, optional): This kwargs will be passed along to Python requests library during download. Defaults to None.
 
         Returns:
             str: The path the data can be found at.
         """
-        if not os.path.exists(desintation):
-            os.makedirs(desintation)
-        desintation = kwargs.pop('destination') if kwargs.get('destination') else desintation
-        self.__logger.info(f"Downloading content from GitHub repo.")
+        if not os.path.exists(destination):
+            os.makedirs(destination)
+        destination = kwargs.pop('destination') if kwargs.get('destination') else destination
+        self.__logger.info(f"Downloading content from GitHub repository.")
         folder_name = self.download_github_repo(
-            save_path=desintation, 
+            save_path=destination, 
             type='adversary-emulation',
             **kwargs
         )
-        return os.path.join(desintation, folder_name)
+        self.__logger.info(f"Successfully downloaded content from GitHub repository.")
+        return os.path.join(destination, folder_name)
 
-    def run(self, adversary: str, content_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
+    def run(self, adversary: str=None, content_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
                   cleanup=False, copy_source_files=True, command_timeout=20, debug=False, 
                   prompt_for_input_args=False, return_content=False, config_file=None, 
                   config_file_only=False, hosts=[], username=None, password=None, 
@@ -143,7 +154,7 @@ class AdversaryEmulationLibrary(Base):
         """The main method in which we run Adversary Emulation Plans.
 
         Args:
-            adversary (str): One or more defined adversary emulation plans by their names
+            adversary (str, optional): One or more defined adversary emulation plans by their names. You must provide an adversary or a config_file. Defaults to None
             content_path (str, optional): The path of Adversary Emulation Library tests. Defaults to os.getcwd().
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
@@ -171,6 +182,8 @@ class AdversaryEmulationLibrary(Base):
             ContentFolderNotFound: Is raised when atomic-operator is unable to find
                                    a folder containing content.
         """
+        if not adversary and not config_file:
+            raise IncorrectParameters(f"You must either provide a 'adversary' name or you must provide a path to a 'config_file'.")
         response = self.__check_arguments(kwargs, self.run)
         if response:
             return response
@@ -187,10 +200,11 @@ class AdversaryEmulationLibrary(Base):
         if cleanup:
             count += 1
         if count > 1:
-            return IncorrectParameters(f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs','cleanup'.")
-        content_path = self.__find_path(path=content_path, adversary=adversary)
-        if not content_path:
-            return ContentFolderNotFound('Unable to find a folder containing adversary emulation repository. Please provide a path or run get_content.')
+            raise IncorrectParameters(f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs','cleanup'.")
+        if adversary:
+            content_path = self.__find_path(path=content_path, adversary=adversary)
+            if not content_path:
+                raise ContentFolderNotFound('Unable to find a folder containing adversary emulation repository. Please provide a path or run get_content.')
         Base.CONFIG = Config(
             content_path          = content_path,
             check_prereqs         = check_prereqs,
@@ -202,29 +216,34 @@ class AdversaryEmulationLibrary(Base):
             kwargs                = kwargs,
             copy_source_files     = copy_source_files
         )
-        self.__logger.info(f"Parsing config")
-        # taking inputs from both config_file and passed in values via command
-        # line to build a run_list of objects
-        self.__config_parser = ConfigParser(
-                config_file=config_file,
-                adversary=adversary,
-                host_list=None if config_file_only else self.parse_input_lists(hosts),
-                username=username,
-                password=password,
-                ssh_key_path=ssh_key_path,
-                private_key_string=private_key_string,
-                verify_ssl=verify_ssl,
-                ssh_port=ssh_port,
-                ssh_timeout=ssh_timeout
-            )
-        self.__run_list = self.__config_parser.run_list
+
+        host_list = []
+        hosts = self.parse_input_lists(hosts) if hosts else None
+        hosts = None if config_file_only else hosts
+        if hosts:
+            for host in hosts:
+                self.__logger.info(host)
+                host_list.append(Host(
+                    hostname=host,
+                    username=username,
+                    password=password,
+                    ssh_key_path=ssh_key_path,
+                    private_key_string=private_key_string,
+                    verify_ssl=verify_ssl,
+                    ssh_port=ssh_port,
+                    ssh_timeout=ssh_timeout
+                ))
+
+        self.__run_list = RunList(
+            adversary=adversary,
+            host_list=host_list,
+            config_file=ConfigFile(**self.load_yaml(config_file)) if config_file else None
+        ).build()
 
         __return_content = []
         for item in self.__run_list:
             if return_content:
                 __return_content.append(item)
-            elif kwargs.get('kwargs'):
-                self.__run_emulation(item, **kwargs.get('kwargs'))
             else:
                 self.__run_emulation(item)
         if return_content and __return_content:
