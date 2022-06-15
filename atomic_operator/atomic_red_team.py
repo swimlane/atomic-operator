@@ -36,7 +36,7 @@ class AtomicRedTeam(Base):
                     executor: ssh
                     authentication:
                       username: root
-                      password: UR4Swimlane!
+                      password: **REMOVED**
                       #ssk_key_path:
                       port: 22
                       timeout: 5

@@ -18,13 +18,12 @@ class AtomicOperator(Base):
                     executor: ssh
                     authentication:
                       username: root
-                      password: UR4Swimlane!
+                      password: **REMOVED**
                       #ssk_key_path:
                       port: 22
                       timeout: 5
                     hosts:
                       # - 192.168.1.1
-                      - 10.32.100.199
                       # etc.
                 atomic_tests:
                   - guid: f7e6ec05-c19e-4a80-a7e7-241027992fdb
