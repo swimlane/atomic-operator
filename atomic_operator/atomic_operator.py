@@ -34,7 +34,7 @@ class AtomicOperator(Base):
                     executor: ssh
                     authentication:
                       username: root
-                      password: ***REMOVED***
+                      password: Somepassword!
                       #ssk_key_path:
                       port: 22
                       timeout: 5
