@@ -2,7 +2,7 @@ import os
 from pypsrp.client import Client
 
 from .runner import Runner
-from ..base import Base
+from .base import Base
 from .copier import Copier
 import logging
 
@@ -221,7 +221,7 @@ class InnvocationState(State, Base):
         else:
             raise AttributeError('Please provide either a ssh_key_path or a password')
         out = None
-        from ..base import Base
+        from .base import Base
         base = Base()
 
         Copier(ssh_client=ssh, elevation_required=elevation_required).copy(input_arguments=input_arguments)

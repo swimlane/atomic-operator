@@ -1,9 +1,9 @@
 import os
 import subprocess
-from .runner import Runner
+from .base import ExecutionBase
 
 
-class AWSRunner(Runner):
+class AWSRunner(ExecutionBase):
     """Runs AtomicTest objects against AWS using the aws-cli
     """
 
