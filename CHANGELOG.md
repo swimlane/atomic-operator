@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.0 - 2022-04-20
+
+    * Major refactor - please consider as new version
+    * Added support for Adversary Emulation Library plans
+
 ## 0.8.4 - 2022-03-25
 
     * Updated formatting of executor for AWS and local runners

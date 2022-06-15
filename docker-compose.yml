@@ -1,0 +1,11 @@
+version: "3.7"
+
+volumes:
+  data:
+
+services:
+  atomic-operator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atomic-operator

@@ -1,10 +1,13 @@
 import os
-import sys
+from pathlib import Path, PurePath
 import zipfile
 from io import BytesIO
 import platform
+
+import yaml
 import requests
 from pick import pick
+
 from .utils.logger import LoggingBase
 
 
@@ -12,14 +15,27 @@ class Base(metaclass=LoggingBase):
 
     CONFIG = None
     ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
-    command_map = {
+    ADVERSARY_EMULATION_LIBRARY_REPO = 'https://github.com/center-for-threat-informed-defense/adversary_emulation_library/zipball/master/'
+    COMMAND_MAP = {
         'command_prompt': {
             'windows': 'C:\\Windows\\System32\\cmd.exe',
             'linux': '/bin/sh',
             'macos': '/bin/sh',
             'default': '/bin/sh'
         },
+        'cmd': {
+            'windows': 'C:\\Windows\\System32\\cmd.exe',
+            'linux': '/bin/sh',
+            'macos': '/bin/sh',
+            'default': '/bin/sh'
+        },
+        'process': {
+            'linux': None
+        },
         'powershell': {
+            'windows': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+        },
+        'pwsh': {
             'windows': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
         },
         'sh': {
@@ -41,7 +57,7 @@ class Base(metaclass=LoggingBase):
         '${{{0}}}'
     ]
 
-    def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
+    def download_github_repo(self, save_path, type, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
 
         Args:
@@ -50,13 +66,23 @@ class Base(metaclass=LoggingBase):
         Returns:
             str: A string of the location the data was saved to.
         """
-        response = requests.get(Base.ATOMIC_RED_TEAM_REPO, stream=True, **kwargs)
+        if type == 'atomic-red-team':
+            url = Base.ATOMIC_RED_TEAM_REPO
+        elif type == 'adversary-emulation':
+            url = Base.ADVERSARY_EMULATION_LIBRARY_REPO
+        else:
+            raise ValueError(f"You provided an unknown type value when trying to download a github report: {type}")
+        self.__logger.debug(f"Save path is {save_path}")
+        response = requests.get(url, stream=True, **kwargs)
         z = zipfile.ZipFile(BytesIO(response.content))
         with zipfile.ZipFile(BytesIO(response.content)) as zf:
             for member in zf.infolist():
                 file_path = os.path.realpath(os.path.join(save_path, member.filename))
                 if file_path.startswith(os.path.realpath(save_path)):
-                    zf.extract(member, save_path)
+                    try:
+                        zf.extract(member, path=save_path)
+                    except FileNotFoundError as fe:
+                        self.__logger.critical(f"Unable to find file or folder! {member.filename}")
         return z.namelist()[0]
 
     def get_local_system_platform(self) -> str:
@@ -81,20 +107,41 @@ class Base(metaclass=LoggingBase):
         """
         return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
 
-    def prompt_user_for_input(self, title, input_object):
-        """Prompts user for input values based on the provided values.
+    def _get_file_name(self, path) -> str:
+        return path.name.rstrip('.yaml')
+
+    def _find_content(self, path, pattern):
+        result = []
+        path = PurePath(path)
+        for p in Path(path).rglob(pattern):
+            result.append(p.resolve())
+        return result
+
+    def load_yaml(self, path_to_dir) -> dict:
+        """Loads a provided yaml file which is typically an Atomic or Emulation plan defintiion or configuration file.
+
+        Args:
+            path_to_dir (str): A string path to a yaml formatted file
+
+        Returns:
+            dict: Returns the loaded yaml file in a dictionary format
         """
-        print(f"""
-Inputs for {title}:
-    Input Name: {input_object.name}
-    Default:     {input_object.default}
-    Description: {input_object.description}
-""")
-        print(f"Please provide a value for {input_object.name} (If blank, default is used):",)
-        value = sys.stdin.readline()
-        if bool(value):
-            return value
-        return input_object.default
+        if path_to_dir and self.get_abs_path(path_to_dir):
+            path = self.get_abs_path(path_to_dir)
+            if not os.path.exists(path):
+                raise FileNotFoundError("Please make sure the provided file path exists.")
+            try:
+                with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
+                    return yaml.safe_load(f.read())
+            except:
+                self.__logger.warning(f"Unable to load technique in '{path_to_dir}'")
+                
+            try:
+                # windows does not like get_abs_path so casting to string
+                with open(str(path_to_dir), 'r', encoding="utf-8") as f:
+                    return yaml.safe_load(f.read())
+            except OSError as oe:
+                self.__logger.warning(f"Unable to load technique in '{path_to_dir}': {oe}")
 
     def parse_input_lists(self, value):
         value_list = None
@@ -135,37 +182,23 @@ Inputs for {title}:
         return self._path_replacement(command, path)
 
     def _check_if_aws(self, test):
-        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
-            return True
+        if hasattr(test, 'supported_platforms'):
+            if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+                return True
         return False
 
     def _check_platform(self, test, show_output=False) -> bool:
         if self._check_if_aws(test):
             return True
-        if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
-            return False
+        if hasattr(test, 'supported_platforms'):
+            if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
+                self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
+                return False
+        elif hasattr(test, 'platforms'):
+            if test.platforms and self.get_local_system_platform() not in test.platforms:
+                self.__logger.info(f"You provided a test ({test.id}) '{test.name}' which is not supported on this platform. Skipping...")
+                return False
         return True
-
-    def _set_input_arguments(self, test, **kwargs):
-        if test.input_arguments:
-            if kwargs:
-                for input in test.input_arguments:
-                    for key,val in kwargs.items():
-                        if input.name == key:
-                            input.value = val
-            if Base.CONFIG.prompt_for_input_args:
-                for input in test.input_arguments:
-                    input.value = self.prompt_user_for_input(test.name, input)
-            for key,val in self.VARIABLE_REPLACEMENTS.items():
-                if test.executor.name == key:
-                    for k,v in val.items():
-                        for input in test.input_arguments:
-                            if k in input.default:
-                                input.value = input.default.replace(k,v)
-            for input in test.input_arguments:
-                if input.value == None:
-                    input.value = input.default
 
     def select_atomic_tests(self, technique):
         options = None

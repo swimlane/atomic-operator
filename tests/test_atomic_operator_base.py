@@ -1,7 +1,8 @@
 import os
 from atomic_operator import AtomicOperator
 from atomic_operator.base import Base
-from atomic_operator.atomic.atomictest import AtomicTest, AtomicTestInput
+from atomic_operator.frameworks.atomictest import AtomicTest
+from atomic_operator.frameworks.base import InputArguments
 from atomic_operator.models import Config
 
 def test_get_abs_path():
@@ -19,7 +20,7 @@ def test_replace_command_string():
       }'''
     test_inputs_list = []
     test_inputs_list.append(
-        AtomicTestInput(
+        InputArguments(
             name="gsecdump_exe",
             description="Path to the Gsecdump executable",
             type="Path",
@@ -28,7 +29,7 @@ def test_replace_command_string():
         )
     )
     test_inputs_list.append(
-        AtomicTestInput(
+        InputArguments(
             name="gsecdump_url",
             description="Path to download Gsecdump binary file",
             type="Url",
@@ -47,12 +48,12 @@ def test_replace_command_string():
 
 def test_setting_input_arguments():
     Base.CONFIG = Config(
-        atomics_path=AtomicOperator().get_atomics(),
+        content_path=AtomicOperator().atomic_red_team.get_content(),
         prompt_for_input_args = False
     )
     test_inputs_list = []
     test_inputs_list.append(
-        AtomicTestInput(
+        InputArguments(
             name="gsecdump_exe",
             description="Path to the Gsecdump executable",
             type="Path",

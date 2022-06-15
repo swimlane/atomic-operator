@@ -1,46 +1,32 @@
 import os
 import subprocess
+
 from .runner import Runner
+from ..base import Base
+from ..frameworks.emulation import CapturedOutput
 
 
 class LocalRunner(Runner):
-    """Runs AtomicTest objects locally
-    """
+    """Runs an AtomicTest or EmulationPhase objects locally."""
 
-    def __init__(self, atomic_test, test_path):
-        """A single AtomicTest object is provided and ran on the local system
-
-        Args:
-            atomic_test (AtomicTest): A single AtomicTest object.
-            test_path (Atomic): A path where the AtomicTest object resides
-        """
-        self.test = atomic_test
-        self.test_path = test_path
-        self.__local_system_platform = self.get_local_system_platform()
-
-    def execute_process(self, command, executor=None, host=None, cwd=None, elevation_required=False):
-        """Executes commands using subprocess
+    def __init__(self, test, test_path):
+        """A single AtomicTest or EmulationPhase object is provided and ran on the local system.
 
         Args:
-            executor (str): An executor or shell used to execute the provided command(s)
-            command (str): The commands to run using subprocess
-            cwd (str): A string which indicates the current working directory to run the command
-            elevation_required (bool): Whether or not elevation is required
-
-        Returns:
-            tuple: A tuple of either outputs or errors from subprocess
+            atomic_test (AtomicTest or EmulationPhase): A single AtomicTest or EmulationPhase object.
+            test_path (Atomic or Adversary): A path where the AtomicTest or Adversary object resides
         """
-        if elevation_required:
-            if executor in ['powershell']:
-                command = f"Start-Process PowerShell -Verb RunAs; {command}"
-            elif executor in ['cmd', 'command_prompt']:
-                command = f'cmd.exe /c "{command}"'
-            elif executor in ['sh', 'bash', 'ssh']:
-                command = f"sudo {command}"
-            else:
-                self.__logger.warning(f"Elevation is required but the executor '{executor}' is unknown!")
-        command = self._replace_command_string(command, self.CONFIG.atomics_path, input_arguments=self.test.input_arguments, executor=executor)
-        executor = self.command_map.get(executor).get(self.__local_system_platform)
+        from ..frameworks import AtomicTest, EmulationPhase
+
+        if isinstance(test, AtomicTest) or isinstance(test, EmulationPhase):
+            self.test = test
+            self.test_path = test_path
+            self._type = str(test.__class__.__name__)
+            self.__local_system_platform = self.get_local_system_platform()
+        else:
+            raise AttributeError(f"The provided test object is not one of 'AtomicTest' or 'EmulationPhase'. Exiting...")
+
+    def _run(self, command, executor=None, host=None, cwd=None, elevation_required=False):
         p = subprocess.Popen(
             executor, 
             shell=False, 
@@ -55,7 +41,13 @@ class LocalRunner(Runner):
                 bytes(command, "utf-8") + b"\n", 
                 timeout=Runner.CONFIG.command_timeout
             )
-            response = self.print_process_output(command, p.returncode, outs, errs)
+            # add to captured output here
+            response = {
+                "out": outs,
+                "returncode": p.returncode,
+                "errors": errs
+            }
+            self.print_process_output(command, p.returncode, outs, errs)
             return response
         except subprocess.TimeoutExpired as e:
             # Display output if it exists.
@@ -71,15 +63,88 @@ class LocalRunner(Runner):
             p.kill()
             return {}
 
-    def _get_executor_command(self):
-        """Checking if executor works with local system platform
-        """
-        __executor = None
-        self.__logger.debug(f"Checking if executor works on local system platform.")
-        if self.__local_system_platform in self.test.supported_platforms:
-            if self.test.executor.name != 'manual':
-                __executor = self.command_map.get(self.test.executor.name).get(self.__local_system_platform)
-        return __executor
+    def _run_dependencies(self, host=None, executor=None):
+        """Checking and running dependencies."""
+        if self.test.dependency_executor_name:
+            executor = self.test.dependency_executor_name
+        for dependency in self.test.dependencies:
+            self.__logger.debug(f"Dependency description: {dependency.description}")
+            if Base.CONFIG.check_prereqs and dependency.prereq_command:
+                self.__logger.debug("Running prerequisite command")
+                command = dependency.get_check_prereqs_command(
+                    executor=executor,
+                    input_arguments=self.test.input_arguments,
+                    elevation_required=self.test.elevation_required
+                )
+                response = self._run(
+                    command=command,
+                    executor=executor,
+                    host=host
+                )
+                dependency.prereq_command_output = CapturedOutput(**response)
 
-    def start(self):
-        return self.execute(executor=self.test.executor.name)
+            if Base.CONFIG.get_prereqs and dependency.get_prereq_command:
+                self.__logger.debug(f"Retrieving prerequistes")
+                command = dependency.get_get_prereqs_command(
+                    executor=executor,
+                    input_arguments=self.test.input_arguments,
+                    elevation_required=self.test.elevation_required
+                )
+                response = self.run(
+                    command=command,
+                    executor=executor,
+                    host=host
+                )
+                dependency.get_prereq_command_output = CapturedOutput(**response)
+
+    def execute(self):
+        if self._type == 'EmulationPhase':
+            executor = self.COMMAND_MAP.get(self.test.platforms._executor).get(self.test._platform)
+            # now lets get the actual test/phase command
+            command = getattr(
+                getattr(self.test.platforms, self.test._platform), 
+                self.test.platforms._executor
+            )
+            if not Base.CONFIG.check_prereqs and not Base.CONFIG.get_prereqs and not Base.CONFIG.cleanup:
+                response = self._run(
+                    command=command.get_command(executor_name=executor, input_arguments=self.test.input_arguments),
+                    executor=executor
+                )
+                command.command_output = CapturedOutput(**response)
+            elif Base.CONFIG.check_prereqs or Base.CONFIG.get_prereqs:
+                if self.test.dependencies:
+                    self._run_dependencies(executor=executor)
+            elif Base.CONFIG.cleanup:
+                cleanup_command = command.get_cleanup_command(
+                    executor_name=executor,
+                    input_arguments=self.test.input_arguments
+                )
+                if command:
+                    response = self._run(
+                        command=cleanup_command,
+                        executor=executor
+                    )
+                    command.cleanup_output = CapturedOutput(**response)
+        elif self._type == 'AtomicTest':
+            if not Base.CONFIG.check_prereqs and not Base.CONFIG.get_prereqs and not Base.CONFIG.cleanup:
+                self.__logger.info("Running defined atomic test command now.")
+                executor = self.COMMAND_MAP.get(self.test.executor.name).get(self.__local_system_platform)
+                response = self._run(
+                    command=self.test.executor.get_command(self.test.input_arguments),
+                    executor=executor
+                )
+                self.test.executor.captured_output = CapturedOutput(**response)
+            elif Base.CONFIG.check_prereqs or Base.CONFIG.get_prereqs:
+                if self.test.dependencies:
+                    self._run_dependencies(executor=executor)
+            elif Base.CONFIG.cleanup:
+                cleanup_command = self.test.executor.get_cleanup_command(
+                    executor_name=executor,
+                    input_arguments=self.test.input_arguments
+                )
+                if cleanup_command:
+                    response = self._run(
+                        command=cleanup_command,
+                        executor=executor
+                    )
+                    self.test.executor.cleanup_output = CapturedOutput(**response)
