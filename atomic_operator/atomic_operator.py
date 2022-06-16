@@ -1,5 +1,9 @@
 import os
 import inspect
+from datetime import datetime
+import socket
+import random
+import string
 
 from .base import Base
 from .models import (
@@ -16,6 +20,7 @@ from .execution import (
   AWSRunner
 )
 
+from .utils.logger import Event, LogParam
 
 class AtomicOperator(Base):
 
@@ -25,7 +30,7 @@ class AtomicOperator(Base):
     These tests (atomics) are predefined tests to mock or emulate a specific technique.
 
     config_file definition:
-            atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines 
+            atomic-operator's run method can be supplied with a path to a configuration file (config_file) which defines
             specific tests and/or values for input parameters to facilitate automation of said tests.
             An example of this config_file can be seen below:
 
@@ -61,6 +66,9 @@ class AtomicOperator(Base):
         ValueError: If a provided technique is unknown we raise an error.
     """
 
+    def __init__(self):
+        self.execution_id = None
+
     __test_responses = {}
 
     def __find_path(self, value):
@@ -91,8 +99,21 @@ class AtomicOperator(Base):
                                 return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
             return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
+    def __get_output(self, key, output):
+        if key in output:
+            return output[key]
+        for value in output.values():
+            if isinstance(value, dict):
+                return self.__get_output(key, value)
+        return ""
+
+    def __get_rand_str(self):
+        length = random.randint(5, 15)
+        alphanum = string.ascii_letters + string.digits
+        return ''.join(random.choice(alphanum) for i in range(length))
+
     def __run_technique(self, technique, **kwargs):
-        """This method is used to run defined Atomic tests within 
+        """This method is used to run defined Atomic tests within
            a MITRE ATT&CK Technique.
 
         Args:
@@ -104,6 +125,8 @@ class AtomicOperator(Base):
             self._set_input_arguments(test, **kwargs)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
+
+            time_start = datetime.utcnow()
             if technique.hosts:
                 for host in technique.hosts:
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
@@ -140,6 +163,26 @@ class AtomicOperator(Base):
                     'technique_name': technique.display_name
                 })
 
+            time_stop = datetime.utcnow()
+            test_resp = self.__test_responses[test.auto_generated_guid]
+            time_stamp_start = str(time_start.isoformat("T")[:-3] + "Z")
+            time_stamp_stop = str(time_stop.isoformat("T")[:-3] + "Z")
+            self.__logger.info(f"Atomic test complete {test.name}",
+                                   extra={
+                                       LogParam.EVENT.value: Event.ATOMIC_TEST_COMPLETE.value,
+                                       LogParam.PROCEDURE_NAME.value:technique.display_name,
+                                       LogParam.PROCEDURE_DESCRIPTION.value: test.description,
+                                       LogParam.PROCEDURE_GUID.value:  test.auto_generated_guid,
+                                       LogParam.EXECUTOR_COMMAND.value: test.executor.command,
+                                       LogParam.EXECUTOR.value: test.executor.name,
+                                       LogParam.EVENT_TECHNIQUE_ID.value: technique.attack_technique,
+                                       LogParam.TIME_START.value: time_stamp_start,
+                                       LogParam.TIME_STOP.value: time_stamp_stop,
+                                       LogParam.STD_OUTPUT.value: self.__get_output('output', test_resp),
+                                       LogParam.STD_ERROR.value: self.__get_output('error', test_resp),
+                                       LogParam.EXECUTION_ID.value: self.execution_id
+                                   })
+
     def help(self, method=None):
         from fire.trace import FireTrace
         from fire.helptext import HelpText
@@ -160,17 +203,17 @@ class AtomicOperator(Base):
             os.makedirs(desintation)
         desintation = kwargs.pop('destination') if kwargs.get('destination') else desintation
         folder_name = self.download_atomic_red_team_repo(
-            save_path=desintation, 
+            save_path=desintation,
             **kwargs
         )
         return os.path.join(desintation, folder_name)
 
     def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
-                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
-                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
-                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
-                  config_file_only=False, hosts=[], username=None, password=None, 
-                  ssh_key_path=None, private_key_string=None, verify_ssl=False, 
+                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False,
+                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False,
+                  prompt_for_input_args=False, return_atomics=False, config_file=None,
+                  config_file_only=False, hosts=[], username=None, password=None,
+                  ssh_key_path=None, private_key_string=None, verify_ssl=False,
                   ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
@@ -250,6 +293,21 @@ class AtomicOperator(Base):
                 select_tests=select_tests
             )
         self.__run_list = self.__config_parser.run_list
+
+        run_list_count = len(self.__run_list)
+        if run_list_count > 0:
+            time_stamp = datetime.utcnow().isoformat("T")[:-3] + "Z"
+            hostname = socket.gethostname()
+            self.execution_id = self.__get_rand_str()
+            self.__logger.info(f"Running {run_list_count} atomics",
+                               extra={
+                                   LogParam.EVENT.value: Event.ATOMIC_RUN_EXEC.value,
+                                   LogParam.OPERATOR_COMMAND.value: techniques,
+                                   LogParam.TIME_STAMP.value: time_stamp,
+                                   LogParam.TARGET_HOST_NAME: hostname,
+                                   LogParam.TARGET_IP.value: socket.gethostbyname(hostname),
+                                   LogParam.EXECUTION_ID.value:self.execution_id
+                               })
 
         __return_atomics = []
         for item in self.__run_list:

@@ -2,8 +2,33 @@ import os
 import logging.config
 import yaml
 
+from enum import Enum
 from logging import FileHandler, DEBUG, INFO, ERROR, WARNING, CRITICAL
 import logging
+
+
+class LogParam(str, Enum):
+    EVENT = "_ao_event"
+    OPERATOR_COMMAND = "_ao_operator_command"
+    TIME_STAMP = "_ao_time_stamp"
+    TARGET_IP = "_ao_target_ip"
+    TARGET_HOST_NAME = "_ao_target_host_name"
+    PROCEDURE_NAME = "_ao_procedure_name"
+    PROCEDURE_DESCRIPTION = "_ao_procedure_description"
+    PROCEDURE_GUID = "_ao_procedure_guid"
+    EXECUTION_ID = "_ao_execution_id"
+    EVENT_PROCEDURE = '_ao_event_procedure'
+    EVENT_TECHNIQUE_ID = '_ao_technique_id'
+    EXECUTOR_COMMAND = "_ao_executor_command"
+    EXECUTOR ="_ao_executor"
+    TIME_START = "_ao_time_start"
+    TIME_STOP="_ao_time_stop"
+    STD_OUTPUT = "_ao_std_output"
+    STD_ERROR = "_ao_std_error"
+
+class Event(str, Enum):
+    ATOMIC_RUN_EXEC = "atomic_run_exec"
+    ATOMIC_TEST_COMPLETE = "atomic_test_complete"
 
 
 class DebugFileHandler(FileHandler):
