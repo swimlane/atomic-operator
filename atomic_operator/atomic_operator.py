@@ -1,3 +1,9 @@
+"""Main class to execute tests using atomic-operator."""
+import os
+
+from fire.trace import FireTrace
+from fire.helptext import HelpText
+
 from .base import Base
 
 
@@ -51,38 +57,30 @@ class AtomicOperator(Base):
                       - windows1
     """
 
-    def help(self, method=None):
-        from fire.trace import FireTrace
-        from fire.helptext import HelpText
+    def help(self, method: str = None) -> HelpText:
+        """Returns HelpText object to be processed by your console."""
         obj = AtomicOperator if not method else getattr(self, method)
         return HelpText(self, trace=FireTrace(obj))
 
     @property
     def art(self):
-        """Redirect entry point to run Atomic Red Team tests
-        """
+        """Redirect entry point to run Atomic Red Team tests."""
         return self.atomic_red_team
 
     @property
     def atomic_red_team(self):
-        """Main entry point to run test from the Adversary Emulation Library
+        """Main entry point to run test from the Adversary Emulation Library.
 
         https://github.com/center-for-threat-informed-defense/adversary_emulation_library
-
-        Raises:
-            NotImplemented: _description_
         """
         from .atomic_red_team import AtomicRedTeam
         return AtomicRedTeam()
 
     @property
     def adversary_emulation(self):
-        """Main entry point to run test from the Adversary Emulation Library
+        """Main entry point to run test from the Adversary Emulation Library.
 
         https://github.com/center-for-threat-informed-defense/adversary_emulation_library
-
-        Raises:
-            NotImplemented: _description_
         """
         from .adversary_emulation import AdversaryEmulationLibrary
         return AdversaryEmulationLibrary()
