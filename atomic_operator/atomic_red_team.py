@@ -1,5 +1,12 @@
+"""Main class used to run Atomic Red Team tests."""
 import os
-import inspect
+from platform import platform
+from typing import List, AnyStr
+
+from fire.trace import FireTrace
+from fire.helptext import HelpText
+
+from atomic_operator_runner import Runner
 
 from .base import Base
 from .models import (
@@ -58,14 +65,11 @@ class AtomicRedTeam(Base):
                   - guid: 32f90516-4bc9-43bd-b18d-2cbe0b7ca9b2
                     inventories:
                       - linux1
-
-    Raises:
-        ValueError: If a provided technique is unknown we raise an error.
     """
 
     __test_responses = {}
 
-    def __find_path(self, value):
+    def _find_path(self, value: str) -> str:
         """Attempts to find a path containing the atomic-red-team repository
 
         Args:
@@ -83,17 +87,7 @@ class AtomicRedTeam(Base):
             if os.path.exists(self.get_abs_path(value)):
                 return self.get_abs_path(value)
 
-    def __check_arguments(self, kwargs, method):
-        if kwargs:
-            for arguments in inspect.getfullargspec(method):
-                if isinstance(arguments, list):
-                    for arg in arguments:
-                        for key,val in kwargs.items():
-                            if key in arg:
-                                return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
-            return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
-
-    def __run_technique(self, technique):
+    def _run_technique(self, technique):
         """This method is used to run defined Atomic tests within 
            a MITRE ATT&CK Technique.
 
@@ -106,44 +100,62 @@ class AtomicRedTeam(Base):
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
+                # TODO: Need to figure out a better way of determining the platform 
+                if test.executor.name in ['powershell', 'command_prompt']:
+                    platform = "windows"
+                else:
+                    platform = "linux"
                 for host in technique.hosts:
-                    self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
+                    self.__logger.info(
+                        f"Running {test.name} test ({test.auto_generated_guid}) for technique "
+                        f"{technique.attack_technique} on host '{host.hostname}'"
+                    )
                     self.__logger.debug(f"Description: {test.description}")
-                    if test.executor.name in ['sh', 'bash']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='ssh')
-                        )
-                    elif test.executor.name in ['command_prompt']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='cmd')
-                        )
-                    elif test.executor.name in ['powershell']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='powershell')
-                        )
+                    resp = Runner(
+                        platform=platform,
+                        hostname=host.hostname,
+                        username=host.username,
+                        password=host.password,
+                        ssh_key_path=host.ssh_key_path,
+                        private_key_string=host.private_key_string,
+                        verify_ssl=host.verify_ssl,
+                        ssh_port=host.ssh_port,
+                        ssh_timeout=host.ssh_timeout
+                    ).run(
+                        command=test.executor.get_command(test.input_arguments),
+                        executor=test.executor.name,
+                        elevation_required=test.executor.elevation_required
+                    )
+                    if self.__test_responses[test.auto_generated_guid]:
+                        self.__test_responses[test.auto_generated_guid]["results"].extend(resp)
                     else:
-                        self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
+                        self.__test_responses[test.auto_generated_guid] = {
+                            "results": resp,
+                            "technique_id": technique.attack_technique,
+                            "technique_name": technique.display_name
+                        }
+                    self.__logger.info(f"Successfully ran test {test.name} on host '{host.hostname}'")
             else:
-                if self._check_platform(test, show_output=True):
+               # if self._check_platform(test, show_output=True):
+                
+                if self.get_local_system_platform() in test.supported_platforms:
+                    print(test, flush=True)
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
-                    self.__logger.debug(f"Description: {test.description}")
-                    if self._check_if_aws(test):
-                        self.__test_responses[test.auto_generated_guid].update(
-                            AWSRunner(test, technique.path).start()
-                        )
-                    else:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            LocalRunner(test, technique.path).execute()
-                        )
-            if self.__test_responses.get(test.auto_generated_guid):
-                self.__test_responses[test.auto_generated_guid].update({
-                    'technique_id': technique.attack_technique,
-                    'technique_name': technique.display_name
-                })
+                    resp = Runner(platform=self.get_local_system_platform()).run(
+                        command=test.executor.get_command(test.input_arguments),
+                        executor=test.executor.name,
+                        elevation_required=test.executor.elevation_required
+                    )
+                    self.__test_responses[test.auto_generated_guid] = {
+                        "results": resp,
+                        "technique_id": technique.attack_technique,
+                        "technique_name": technique.display_name
+                    }
+                    self.__logger.info(f"Successfully ran test {test.name}.")
 
-    def help(self, method=None):
-        from fire.trace import FireTrace
-        from fire.helptext import HelpText
+
+    def help(self, method=None) -> HelpText:
+        """Inspects docstrings on the provided method and displays it."""
         obj = AtomicRedTeam if not method else getattr(self, method)
         return HelpText(self.run,trace=FireTrace(obj))
 
@@ -167,13 +179,15 @@ class AtomicRedTeam(Base):
         )
         return os.path.join(destination, folder_name)
 
-    def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
-                  content_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
-                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
-                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
-                  config_file_only=False, hosts=[], username=None, password=None, 
-                  ssh_key_path=None, private_key_string=None, verify_ssl=False, 
-                  ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
+    def run(
+            self, techniques: List[str] = ["all"], test_guids: List[str] = [], content_path: AnyStr = os.getcwd(), 
+            check_prereqs: bool = False, get_prereqs: bool = False, cleanup: bool = False,
+            copy_source_files: bool = True, command_timeout: int = 20, debug: bool = False,
+            prompt_for_input_args: bool = False, return_content: bool = False, config_file: AnyStr = None,
+            config_file_only: bool = False, hosts: List[str] = [], username: AnyStr = None, password: AnyStr = None,
+            ssh_key_path: AnyStr = None, private_key_string: AnyStr = None, verify_ssl: bool = False,
+            ssh_port: int = 22, ssh_timeout: int = 5, *args, **kwargs
+        ) -> List:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
@@ -188,7 +202,7 @@ class AtomicRedTeam(Base):
             command_timeout (int, optional): Timeout duration for each command. Defaults to 20.
             debug (bool, optional): Whether or not you want to output details about tests being ran. Defaults to False.
             prompt_for_input_args (bool, optional): Whether you want to prompt for input arguments for each test. Defaults to False.
-            return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
+            return_content (bool, optional): Whether or not you want to return content instead of running them. Defaults to False.
             config_file (str, optional): A path to a config_file which is used to automate atomic-operator in environments. Default to None.
             config_file_only (bool, optional): Whether or not you want to run tests based on the provided config_file only. Defaults to False.
             hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
@@ -204,7 +218,7 @@ class AtomicRedTeam(Base):
         Raises:
             ValueError: If a provided technique is unknown we raise an error.
         """
-        response = self.__check_arguments(kwargs, self.run)
+        response = self._check_arguments(kwargs, self.run)
         if response:
             return response
         if kwargs.get('help'):
@@ -220,10 +234,15 @@ class AtomicRedTeam(Base):
         if cleanup:
             count += 1
         if count > 1:
-            return IncorrectParameters(f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs','cleanup'.")
-        content_path = self.__find_path(content_path)
+            return IncorrectParameters(
+                f"You have passed in incompatible arguments. Please only provide one of 'check_prereqs','get_prereqs',"
+                "'cleanup'."
+            )
+        content_path = self._find_path(content_path)
         if not content_path:
-            return ContentFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_content.')
+            return ContentFolderNotFound(
+                'Unable to find a folder containing Atomics. Please provide a path or run get_content.'
+            )
         Base.CONFIG = Config(
             content_path          = content_path,
             check_prereqs         = check_prereqs,
@@ -261,10 +280,10 @@ class AtomicRedTeam(Base):
 
         __return_atomics = []
         for item in self.__run_list:
-            if return_atomics:
+            if return_content:
                 __return_atomics.append(item)
             else:
-                self.__run_technique(item)
-        if return_atomics and __return_atomics:
+                self._run_technique(item)
+        if return_content and __return_atomics:
             return __return_atomics
         return self.__test_responses
