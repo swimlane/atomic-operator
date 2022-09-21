@@ -89,7 +89,8 @@ class AdversaryEmulationConfig(BaseFrameworkConfig):
 
 @define
 class AtomicTestsConfig:
-    guid: AnyStr = field()
+    guid: AnyStr = field(factory=str)
+    technique: AnyStr = field(factory=str)
     input_arguments: dict = field(factory=dict)
     inventories: List = field(factory=list)
 
