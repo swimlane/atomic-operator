@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "atomic-operator"
+version = "1.0.0"
+description = "A Python package to execute tests for adversary emulation"
+authors = ["MSAdministrator <rickardja@live.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "atomic_operator"}]
+include = ["atomic_operator/data/logging.yml"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Security"
+]
+keywords = ['atomic-red-team', 'att&ck', 'test', 'mitre', 'executor']
+repository = "https://github.com/swimlane/atomic-operator"
+homepage = "https://atomic-operator.com"
+maintainers = ["MSAdministrator <rickardja@live.com>"]
+
+[tool.poetry.scripts]
+atomic-operator = 'atomic_operator.__main__:main'
+
+[tool.poetry.urls]
+"Documentation" = "https://swimlane.com"
+"Changelog" = "https://github.com/swimlane/atomic-operator/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/swimlane/atomic-operator/issues"
+"Source Code" = "https://github.com/swimlane/atomic-operator"
+"Funding" = "https://github.com/sponsors/msadministrator"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+PyYAML = "^6.0"
+fire = "^0.4.0"
+requests = "^2.28.1"
+attrs = "^22.1.0"
+pick = "^2.0.0"
+pydantic = "^1.10.1"
+atomic-operator-runner = "^0.1.6"
+
+[tool.poetry.group.dev.dependencies]
+pylama = "^8.4.1"
+Jinja2 = "^3.1.2"
+mkdocs = "^1.2.4"
+mkdocstrings = "^0.18.0"
+black = ">=22.8.0"
+coverage = {extras = ["toml"], version = ">=6.2"}
+flake8 = ">=4.0.1"
+bandit = "<=1.7.2"
+flake8-bugbear = ">=21.9.2"
+flake8-docstrings = ">=1.6.0"
+flake8-rst-docstrings = ">=0.2.5"
+isort = ">=5.10.1"
+pre-commit = ">=2.16.0"
+pre-commit-hooks = ">=4.1.0"
+pytest = ">=6.2.5"
+pyupgrade = ">=2.29.1"
+safety = ">=1.10.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
