@@ -49,6 +49,6 @@ frameworks:
         inventories:
           - windows1
           - linux1
-      - guid: c141bbdb-7fca-4254-9fd6-f47e79447e17
+      - technique: T1001
         inventories:
           - linux1
