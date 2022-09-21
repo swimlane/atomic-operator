@@ -1,5 +1,5 @@
 import os
-from pypsrp.client import Client
+#from pypsrp.client import Client
 
 from .runner import Runner
 from ..base import Base

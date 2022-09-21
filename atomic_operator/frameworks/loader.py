@@ -12,7 +12,7 @@ from ..utils.exceptions import ContentFolderNotFound
 
 class Loader(Base):
 
-    __techniques = {}
+    _techniques = {}
     TECHNIQUE_DIRECTORY_PATTERN = 'T*'
 
     def load(self) -> dict:
@@ -28,7 +28,7 @@ class Loader(Base):
         for item in content:
             self.__logger.debug(f"Item is {item}")
             name = self._get_file_name(item)
-            if not self.__techniques.get(name):
+            if not self._techniques.get(name):
                 loaded_technique = self.load_yaml(str(item))
                 if loaded_technique:
                     if isinstance(loaded_technique, list):
@@ -44,9 +44,9 @@ class Loader(Base):
                             'path': os.path.dirname(str(item)),
                             'phases': phase_list
                         })
-                        self.__techniques[name] = EmulationPlanDetails(**emulation)
+                        self._techniques[name] = EmulationPlanDetails(**emulation)
                     elif isinstance(loaded_technique, dict):
                         # This means it is in the structure of an Atomic
                         loaded_technique.update({'path': os.path.dirname(str(item))})
-                        self.__techniques[name] = Atomic(**loaded_technique)
-        return self.__techniques
+                        self._techniques[name] = Atomic(**loaded_technique)
+        return self._techniques
