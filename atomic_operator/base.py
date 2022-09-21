@@ -1,7 +1,10 @@
+"""Base class for all classes."""
+import inspect
 import os
 from pathlib import Path, PurePath
 import zipfile
 from io import BytesIO
+from typing import Any
 import platform
 
 import yaml
@@ -9,6 +12,7 @@ import requests
 from pick import pick
 
 from .utils.logger import LoggingBase
+from .utils.exceptions import IncorrectParameters
 
 
 class Base(metaclass=LoggingBase):
@@ -56,6 +60,17 @@ class Base(metaclass=LoggingBase):
         '#{{{0}}}',
         '${{{0}}}'
     ]
+
+    def _check_arguments(self, kwargs: dict, method: Any) -> None:
+        """Checks the provided kwargs dict for key arguments."""
+        if kwargs:
+            for arguments in inspect.getfullargspec(method):
+                if isinstance(arguments, list):
+                    for arg in arguments:
+                        for key,val in kwargs.items():
+                            if key in arg:
+                                return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized. Did you mean '{arg}'?")
+            return IncorrectParameters(f"You passed in an argument of '{key}' which is not recognized.")
 
     def download_github_repo(self, save_path, type, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
@@ -216,3 +231,13 @@ class Base(metaclass=LoggingBase):
 
     def format_pick_options(self, option):
         return f"{option.name} ({option.auto_generated_guid})"
+
+    def _get_platform_from_executor(self, executor: str) -> str:
+        """Used to attempt to determine the platform based on the provided executor
+
+        Args:
+            executor (str): _description_
+
+        Returns:
+            str: _description_
+        """
