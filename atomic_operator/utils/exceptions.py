@@ -1,3 +1,16 @@
+"""All custom exceptions for Atomic Operator."""
+
+
+class PlatformNotSupportedError(Exception):
+    """Raised when a platform is not supported by Atomic Operator."""
+
+    def __init__(self, provided_platform: str, supported_platforms: list = []) -> None:
+        """Main init for the PlatformNotSupportedError exception."""
+        from ..base import Base
+
+        Base().log(message=f"Provided platform '{provided_platform}' is not supported by Atomic Operator. Supported platforms are: {supported_platforms}", level='error')
+
+
 class IncorrectParameters(Exception):
 
     """

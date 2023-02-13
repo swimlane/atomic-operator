@@ -1,6 +1,8 @@
 import os
 import inspect
 
+from atomic_operator_runner import Runner
+
 from .base import Base
 from .models import (
     Config
@@ -8,12 +10,8 @@ from .models import (
 from .configparser import ConfigParser
 from .utils.exceptions import (
     AtomicsFolderNotFound,
-    IncorrectParameters
-)
-from .execution import (
-  LocalRunner,
-  RemoteRunner,
-  AWSRunner
+    IncorrectParameters,
+    PlatformNotSupportedError
 )
 
 
@@ -101,6 +99,9 @@ class AtomicOperator(Base):
         """
         self.__logger.debug(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
+            if test.executor.name == 'manual':
+                self.__logger.info(f"The test {test.name} ({test.auto_generated_guid}) is a manual test. Skipping.")
+                continue
             self._set_input_arguments(test, **kwargs)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
@@ -108,37 +109,84 @@ class AtomicOperator(Base):
                 for host in technique.hosts:
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.__logger.debug(f"Description: {test.description}")
-                    if test.executor.name in ['sh', 'bash']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='ssh')
+                    supported_platforms = [x for x in test.supported_platforms if x in self.SUPPORTED_PLATFORMS]
+                    for platform in supported_platforms:
+                        self.__logger.debug(f"Running test on {platform} platform.")
+                        # TODO: Need to add support for copy of files to remote hosts.
+                        path = technique.path
+                        if platform == 'windows':
+                            path = "c:\\temp"
+                        elif platform == 'linux' or platform == 'macos' or platform == 'aws':
+                            path = "/tmp"
+                        else:
+                            raise PlatformNotSupportedError(provided_platform=platform, supported_platforms=self.SUPPORTED_PLATFORMS)
+                        self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
+                        new_command = self._replace_command_string(
+                            command=test.executor.command,
+                            path=path,
+                            input_arguments=test.input_arguments,
+                            executor=test.executor.name
                         )
-                    elif test.executor.name in ['command_prompt']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='cmd')
+                        self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
+                        runner = Runner(
+                            platform=platform, 
+                            hostname=host.hostname, 
+                            username=host.username, 
+                            password=host.password, 
+                            verify_ssl=host.verify_ssl, 
+                            ssh_key_path=host.ssh_key_path, 
+                            private_key_string=host.private_key_string, 
+                            ssh_port=host.port, 
+                            ssh_timeout=host.timeout
                         )
-                    elif test.executor.name in ['powershell']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='powershell')
-                        )
-                    else:
-                        self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
             else:
                 if self._check_platform(test, show_output=True):
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.__logger.debug(f"Description: {test.description}")
+                    runner = Runner(
+                        platform=self.get_local_system_platform()
+                    )
+                    self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
+                    new_command = self._replace_command_string(
+                        command=test.executor.command,
+                        path=technique.path,
+                        input_arguments=test.input_arguments,
+                        executor=test.executor.name
+                    )
+                    self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
                     if self._check_if_aws(test):
-                        self.__test_responses[test.auto_generated_guid].update(
-                            AWSRunner(test, technique.path).start()
-                        )
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
+                        
                     else:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            LocalRunner(test, technique.path).start()
-                        )
-            if self.__test_responses.get(test.auto_generated_guid):
-                self.__test_responses[test.auto_generated_guid].update({
-                    'technique_id': technique.attack_technique,
-                    'technique_name': technique.display_name
-                })
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
 
     def help(self, method=None):
         from fire.trace import FireTrace
