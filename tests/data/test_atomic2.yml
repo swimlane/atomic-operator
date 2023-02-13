@@ -22,7 +22,7 @@ atomic_tests:
       default: PathToAtomicsFolder\T1003\bin\gsecdump.exe
     gsecdump_bin_hash:
       description: File hash of the Gsecdump binary file
-      type: String
+      type: string
       default: 94CAE63DCBABB71C5DD43F55FD09CAEFFDCD7628A02A112FB3CBA36698EF72BC
     gsecdump_url:
       description: Path to download Gsecdump binary file
@@ -67,7 +67,7 @@ atomic_tests:
       default: /tmp/T1003.007.sh
     pid_term:
       description: Unique string to use to identify target process
-      type: String
+      type: string
       default: T1003.007
 
   dependencies:
