@@ -35,7 +35,7 @@ class Base(metaclass=LoggingBase):
         }
     }
     VARIABLE_REPLACEMENTS = {
-        'command_prompt': {
+        'powershell': {
             '%temp%': "$env:TEMP"
         }
     }
