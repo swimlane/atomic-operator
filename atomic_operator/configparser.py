@@ -64,6 +64,7 @@ class ConfigParser(Base):
             )
         ]
         """
+        self._all_loaded_techniques = Loader().load_techniques()
         self.__config_file = self.__load_config(config_file)
         self.techniques = techniques
         self.test_guids = test_guids
@@ -156,35 +157,34 @@ class ConfigParser(Base):
 
     def __build_run_list(self, techniques=None, test_guids=None, host_list=None, select_tests=False):
         __run_list = []
-        self.__loaded_techniques = Loader().load_techniques()
         if test_guids:
-            for key,val in self.__loaded_techniques.items():
+            for key,val in self._all_loaded_techniques.items():
                 test_list = []
                 for test in val.atomic_tests:
                     if test.auto_generated_guid in test_guids:
                         test_list.append(test)
                 if test_list:
-                    temp = self.__loaded_techniques[key]
+                    temp = self._all_loaded_techniques[key]
                     temp.atomic_tests = test_list
                     temp.hosts = host_list
                     __run_list.append(temp)
         if techniques:
             if 'all' not in techniques:
                 for technique in techniques:
-                    if self.__loaded_techniques.get(technique):
-                        temp = self.__loaded_techniques[technique]
+                    if self._all_loaded_techniques.get(technique):
+                        temp = self._all_loaded_techniques[technique]
                         if select_tests:
                             temp.atomic_tests = self.select_atomic_tests(
-                                self.__loaded_techniques[technique]
+                                self._all_loaded_techniques[technique]
                             )
                         temp.hosts = host_list
                         __run_list.append(temp)
             elif 'all' in techniques and not test_guids:
-                for key,val in self.__loaded_techniques.items():
-                    temp = self.__loaded_techniques[key]
+                for key,val in self._all_loaded_techniques.items():
+                    temp = self._all_loaded_techniques[key]
                     if select_tests:
                             temp.atomic_tests = self.select_atomic_tests(
-                                self.__loaded_techniques[key]
+                                self._all_loaded_techniques[key]
                             )
                     temp.hosts = host_list
                     __run_list.append(temp)
