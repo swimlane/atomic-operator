@@ -1,5 +1,6 @@
 import os
 import inspect
+from typing import AnyStr
 
 from atomic_operator_runner import Runner
 
@@ -213,6 +214,48 @@ class AtomicOperator(Base):
         )
         return os.path.join(desintation, folder_name)
 
+    def search(self, keyword: AnyStr, atomics_path: AnyStr = os.getcwd()) -> None:
+        """Searches all atomic tests for a keyword.
+
+        Args:
+            keyword (AnyStr): A keyword or string to search for.
+            atomics_path (AnyStr, optional): The path to atomics in which we search. Defaults to os.getcwd().
+        """
+        from rich.console import Console
+        from rich.table import Table
+
+        from .atomic.loader import Loader
+
+        self._results = {}
+        atomics_path = self.__find_path(atomics_path)
+        if not atomics_path:
+            return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
+        Base.CONFIG = Config(atomics_path=atomics_path)
+
+        table = Table(title="Search Results")
+        table.add_column("Technique ID", style="cyan", justify="left")
+        table.add_column("Technique Name", style="magenta", justify="left")
+        table.add_column("Test", style="green", justify="left")
+        table.add_column("Found In", style="green", justify="left")
+
+        for key, technique in Loader().load_techniques().items():
+            for key,val in technique.__dict__.items():
+                if isinstance(val, list):
+                    for test in val:
+                        for key, val in test.__dict__.items():
+                            if keyword in str(val):
+                                table.add_row(
+                                    technique.attack_technique,
+                                    technique.display_name,
+                                    test.name,
+                                    key
+                                )
+                                self.__logger.debug(f"Found keyword '{keyword}' in {technique.attack_technique} {technique.display_name}.")
+        if table.rows:
+            console = Console()
+            console.print(table)
+        else: self.__logger.info(f"No results found for keyword '{keyword}'.")
+
     def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
                   atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
                   cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
@@ -298,7 +341,6 @@ class AtomicOperator(Base):
                 select_tests=select_tests
             )
         self.__run_list = self.__config_parser.run_list
-
         __return_atomics = []
         for item in self.__run_list:
             if return_atomics:
