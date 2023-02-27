@@ -14,8 +14,15 @@ def test_loading_of_technique():
     assert Loader().load_technique(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'atomic_operator_config.yml'))
 
 def test_parsing_of_config():
+    from atomic_operator.models import Config
+    from atomic_operator.base import Base
+    from atomic_operator import AtomicOperator
+
+    atomics_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    AtomicOperator().get_atomics(desintation=atomics_path)
+    Base.CONFIG = Config(atomics_path=atomics_path)
     config_parser = ConfigParser(config_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'atomic_operator_config.yml'))
-    print(config_parser.config)
+
     assert config_parser.is_defined('f7e6ec05-c19e-4a80-a7e7-241027992fdb')
     inputs = config_parser.get_inputs('f7e6ec05-c19e-4a80-a7e7-241027992fdb')
     assert inputs.get('output_file')
