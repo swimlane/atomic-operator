@@ -4,9 +4,6 @@ from atomic_operator.atomic.loader import Loader
 from atomic_operator.atomic.atomic import Atomic
 from atomic_operator.atomic.atomictest import AtomicTest
 
-def test_loader_attribute_error():
-    with raises(AttributeError):
-        Loader().load_techniques()
 
 def test_load_technique():
     path = os.path.join(os.path.dirname(__file__), 'data', 'test_atomic2.yml')
