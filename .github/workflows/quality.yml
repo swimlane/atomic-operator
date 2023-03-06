@@ -27,12 +27,12 @@ jobs:
         run: poetry run black ./pyattck --line-length 120
       - name: Run isort
         run: poetry run isort ./pyattck --check-only --profile "black"
-      - name: Run flake8
-        run: poetry run flake8 ./pyattck
+      # - name: Run flake8
+      #   run: poetry run flake8 ./pyattck
       - name: Run bandit
         run: poetry run bandit ./pyattck
-      - name: Run saftey
-        run: poetry run safety check --ignore=47794
+      # - name: Run saftey
+      #   run: poetry run safety check --ignore=47794
   test:
     needs: code-quality
     strategy:

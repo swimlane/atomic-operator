@@ -33,6 +33,9 @@ mkdocs = "^1.4.2"
 mkdocs-material = "^9.0.12"
 mkdocs-material-extensions = "^1.1.1"
 mkdocstrings = "^0.20.0"
+black = "^23.1.0"
+isort = "^5.12.0"
+bandit = "^1.7.4"
 
 [build-system]
 requires = ["poetry-core"]
