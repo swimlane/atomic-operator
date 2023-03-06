@@ -16,7 +16,7 @@ jobs:
         id: release
         with:
           release-type: python
-          package-name: pyattck
+          package-name: atomic-operator
           bump-minor-pre-major: true
           bump-patch-for-minor-pre-major: true
           include-v-in-tag: false
