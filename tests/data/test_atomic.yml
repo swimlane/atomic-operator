@@ -22,7 +22,7 @@ atomic_tests:
       default: /tmp/T1003.007.sh
     pid_term:
       description: Unique string to use to identify target process
-      type: String
+      type: string
       default: T1003.007
 
   dependencies:
@@ -74,7 +74,7 @@ atomic_tests:
       default: PathToAtomicsFolder/T1003.007/src/dump_heap.py
     pid_term:
       description: Unique string to use to identify target process
-      type: String
+      type: string
       default: T1003.007
 
   dependencies:

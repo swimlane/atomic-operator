@@ -6,7 +6,8 @@ def main():
     fire.Fire({
         'run': atomic_operator.run,
         'get_atomics': atomic_operator.get_atomics,
-        'help': atomic_operator.help
+        'help': atomic_operator.help,
+        'search': atomic_operator.search
     })
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
 import os
+import inspect
 import sys
 import zipfile
 from io import BytesIO
+from typing import AnyStr
 import platform
 import requests
 from pick import pick
@@ -12,6 +14,7 @@ class Base(metaclass=LoggingBase):
 
     CONFIG = None
     ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
+    SUPPORTED_PLATFORMS = ["windows", "linux", "macos", "aws"]
     command_map = {
         'command_prompt': {
             'windows': 'C:\\Windows\\System32\\cmd.exe',
@@ -32,7 +35,7 @@ class Base(metaclass=LoggingBase):
         }
     }
     VARIABLE_REPLACEMENTS = {
-        'command_prompt': {
+        'powershell': {
             '%temp%': "$env:TEMP"
         }
     }
@@ -183,3 +186,20 @@ Inputs for {title}:
 
     def format_pick_options(self, option):
         return f"{option.name} ({option.auto_generated_guid})"
+
+    def log(self, message: AnyStr, level: AnyStr = "info") -> None:
+        """Used to centralize logging across components.
+
+        We identify the source of the logging class by inspecting the calling stack.
+
+        Args:
+            message (AnyStr): The log value string to output.
+            level (AnyStr): The log level. Defaults to "info".
+        """
+        component = None
+        parent = inspect.stack()[1][0].f_locals.get("self", None)
+        component = parent.__class__.__name__
+        try:
+            getattr(getattr(parent, f"_{component}__logger"), level)(message)
+        except AttributeError as ae:
+            getattr(self.__logger, level)(message + ae)

@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "atomic-operator"
+version = "1.0.0"
+description = "A python package to execute security tests on remote and local hosts"
+authors = ["MSAdministrator <MSAdministrator@users.noreply.github.com>"]
+maintainers = ["MSAdministrator <MSAdministrator@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "atomic_operator"}]
+include = [
+    "atomic_operator/data/logging.yml"
+]
+homepage = "https://atomic-operator.com"
+repository = "https://github.com/swimlane/atomic-operator"
+documentation = "https://atomic-operator.com"
+license = "MIT"
+
+[tool.poetry.scripts]
+atomic-operator = "atomic_operator.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+atomic-operator-runner = "^0.2.1"
+fire = "^0.5.0"
+pick = "^2.2.0"
+rich = "^13.3.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+pylama = "^8.4.1"
+coverage = "^7.1.0"
+Jinja2 = "^3.1.2"
+mkdocs = "^1.4.2"
+mkdocs-material = "^9.0.12"
+mkdocs-material-extensions = "^1.1.1"
+mkdocstrings = "^0.20.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

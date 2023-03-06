@@ -1,5 +1,8 @@
 import os
 import inspect
+from typing import AnyStr
+
+from atomic_operator_runner import Runner
 
 from .base import Base
 from .models import (
@@ -8,12 +11,8 @@ from .models import (
 from .configparser import ConfigParser
 from .utils.exceptions import (
     AtomicsFolderNotFound,
-    IncorrectParameters
-)
-from .execution import (
-  LocalRunner,
-  RemoteRunner,
-  AWSRunner
+    IncorrectParameters,
+    PlatformNotSupportedError
 )
 
 
@@ -101,44 +100,97 @@ class AtomicOperator(Base):
         """
         self.__logger.debug(f"Checking technique {technique.attack_technique} ({technique.display_name}) for applicable tests.")
         for test in technique.atomic_tests:
+            if test.executor.name == 'manual':
+                self.__logger.info(f"The test {test.name} ({test.auto_generated_guid}) is a manual test. Skipping.")
+                continue
             self._set_input_arguments(test, **kwargs)
+            config_args = self.__config_parser.get_inputs(test.auto_generated_guid)
+            if config_args:
+                self._set_input_arguments(test, **config_args)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
                 for host in technique.hosts:
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.__logger.debug(f"Description: {test.description}")
-                    if test.executor.name in ['sh', 'bash']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='ssh')
+                    supported_platforms = [x for x in test.supported_platforms if x in self.SUPPORTED_PLATFORMS]
+                    for platform in supported_platforms:
+                        self.__logger.debug(f"Running test on {platform} platform.")
+                        # TODO: Need to add support for copy of files to remote hosts.
+                        path = technique.path
+                        if platform == 'windows':
+                            path = "c:\\temp"
+                        elif platform == 'linux' or platform == 'macos' or platform == 'aws':
+                            path = "/tmp"
+                        else:
+                            raise PlatformNotSupportedError(provided_platform=platform, supported_platforms=self.SUPPORTED_PLATFORMS)
+                        self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
+                        new_command = self._replace_command_string(
+                            command=test.executor.command,
+                            path=path,
+                            input_arguments=test.input_arguments,
+                            executor=test.executor.name
                         )
-                    elif test.executor.name in ['command_prompt']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='cmd')
+                        self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
+                        runner = Runner(
+                            platform=platform, 
+                            hostname=host.hostname, 
+                            username=host.username, 
+                            password=host.password, 
+                            verify_ssl=host.verify_ssl, 
+                            ssh_key_path=host.ssh_key_path, 
+                            private_key_string=host.private_key_string, 
+                            ssh_port=host.port, 
+                            ssh_timeout=host.timeout
                         )
-                    elif test.executor.name in ['powershell']:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            RemoteRunner(test, technique.path).start(host=host, executor='powershell')
-                        )
-                    else:
-                        self.__logger.warning(f"Unable to execute test since the executor is {test.executor.name}. Skipping.....")
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
             else:
                 if self._check_platform(test, show_output=True):
                     self.__logger.info(f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}")
                     self.__logger.debug(f"Description: {test.description}")
+                    runner = Runner(
+                        platform=self.get_local_system_platform()
+                    )
+                    self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
+                    new_command = self._replace_command_string(
+                        command=test.executor.command,
+                        path=technique.path,
+                        input_arguments=test.input_arguments,
+                        executor=test.executor.name
+                    )
+                    self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
                     if self._check_if_aws(test):
-                        self.__test_responses[test.auto_generated_guid].update(
-                            AWSRunner(test, technique.path).start()
-                        )
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
+                        
                     else:
-                        self.__test_responses[test.auto_generated_guid].update(
-                            LocalRunner(test, technique.path).start()
-                        )
-            if self.__test_responses.get(test.auto_generated_guid):
-                self.__test_responses[test.auto_generated_guid].update({
-                    'technique_id': technique.attack_technique,
-                    'technique_name': technique.display_name
-                })
+                        for response in runner.run(
+                                command=new_command,
+                                executor=test.executor.name,
+                                elevation_required=test.executor.elevation_required
+                            ):
+                                self.__test_responses[test.auto_generated_guid].update({
+                                    'technique_id': technique.attack_technique,
+                                    'technique_name': technique.display_name,
+                                    'response': response
+                                })
 
     def help(self, method=None):
         from fire.trace import FireTrace
@@ -165,13 +217,55 @@ class AtomicOperator(Base):
         )
         return os.path.join(desintation, folder_name)
 
+    def search(self, keyword: AnyStr, atomics_path: AnyStr = os.getcwd()) -> None:
+        """Searches all atomic tests for a keyword.
+
+        Args:
+            keyword (AnyStr): A keyword or string to search for.
+            atomics_path (AnyStr, optional): The path to atomics in which we search. Defaults to os.getcwd().
+        """
+        from rich.console import Console
+        from rich.table import Table
+
+        from .atomic.loader import Loader
+
+        self._results = {}
+        atomics_path = self.__find_path(atomics_path)
+        if not atomics_path:
+            return AtomicsFolderNotFound('Unable to find a folder containing Atomics. Please provide a path or run get_atomics.')
+        Base.CONFIG = Config(atomics_path=atomics_path)
+
+        table = Table(title="Search Results")
+        table.add_column("Technique ID", style="cyan", justify="left")
+        table.add_column("Technique Name", style="magenta", justify="left")
+        table.add_column("Test", style="green", justify="left")
+        table.add_column("Found In", style="green", justify="left")
+
+        for key, technique in Loader().load_techniques().items():
+            for key,val in technique.__dict__.items():
+                if isinstance(val, list):
+                    for test in val:
+                        for key, val in test.__dict__.items():
+                            if keyword in str(val):
+                                table.add_row(
+                                    technique.attack_technique,
+                                    technique.display_name,
+                                    test.name,
+                                    key
+                                )
+                                self.__logger.debug(f"Found keyword '{keyword}' in {technique.attack_technique} {technique.display_name}.")
+        if table.rows:
+            console = Console()
+            console.print(table)
+        else: self.__logger.info(f"No results found for keyword '{keyword}'.")
+
     def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
-                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
-                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
-                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
+                  atomics_path=os.getcwd(), input_arguments: dict = {}, check_prereqs=False, 
+                  get_prereqs=False, cleanup=False, copy_source_files=True,command_timeout=20, 
+                  debug=False, prompt_for_input_args=False, return_atomics=False, config_file=None, 
                   config_file_only=False, hosts=[], username=None, password=None, 
                   ssh_key_path=None, private_key_string=None, verify_ssl=False, 
-                  ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
+                  ssh_port=22, ssh_timeout=5, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
@@ -179,6 +273,7 @@ class AtomicOperator(Base):
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             select_tests (bool, optional): Select one or more tests from provided techniques. Defaults to False.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
+            input_arguments (dict, optional): A dictionary of input arguments to pass to the test. Defaults to {}.
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
@@ -230,7 +325,7 @@ class AtomicOperator(Base):
             command_timeout       = command_timeout,
             debug                 = debug,
             prompt_for_input_args = prompt_for_input_args,
-            kwargs                = kwargs,
+            kwargs                = input_arguments,
             copy_source_files     = copy_source_files
         )
         # taking inputs from both config_file and passed in values via command
@@ -250,13 +345,12 @@ class AtomicOperator(Base):
                 select_tests=select_tests
             )
         self.__run_list = self.__config_parser.run_list
-
         __return_atomics = []
         for item in self.__run_list:
             if return_atomics:
                 __return_atomics.append(item)
-            elif kwargs.get('kwargs'):
-                self.__run_technique(item, **kwargs.get('kwargs'))
+            elif input_arguments:
+                self.__run_technique(item, **input_arguments)
             else:
                 self.__run_technique(item)
         if return_atomics and __return_atomics:

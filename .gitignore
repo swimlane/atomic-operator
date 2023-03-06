@@ -12,6 +12,8 @@ warning.log
 debug.log
 
 .DS_Store
+redcanaryco-atomic-red-team-*
+node_modules
 
 # Distribution / packaging
 .Python

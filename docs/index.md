@@ -26,6 +26,7 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Can be automated further based on a configuration file
 * A command-line and importable Python package
 * Select specific tests when one or more techniques are specified
+* Search across all atomics for that perfect test
 * Plus more
 
 ## Getting Started

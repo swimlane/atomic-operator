@@ -1,5 +1,4 @@
-::: atomic_operator.execution.runner
-::: atomic_operator.execution.localrunner
-::: atomic_operator.execution.remoterunner
-::: atomic_operator.execution.awsrunner
-::: atomic_operator.execution.statemachine
+::: atomic_operator_runner.runner
+::: atomic_operator_runner.remote
+::: atomic_operator_runner.local
+::: atomic_operator_runner.aws

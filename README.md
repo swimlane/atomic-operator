@@ -31,6 +31,8 @@ Additionally, `atomic-operator` can be used in many other situations like:
 * Can be automated further based on a configuration file
 * A command-line and importable Python package
 * Select specific tests when one or more techniques are specified
+* Search across all atomics for that perfect test
+* Pass input_arguments as input for tests via command line
 * Plus more
 
 ## Getting Started
@@ -147,6 +149,13 @@ Will prompt the user with a selection list of tests associated with that techniq
    Show all hidden files (9a1ec7da-b892-449f-ad68-67066d04380c)
 ```
 
+The following will allow you to provide custom input arguments for tests. You do this providing a dictionary of keys and values as a dictionary to the `input_arguments` parameter on the run method.
+
+```bash
+atomic-operator run --techniques T1564.001 --input_arguments '{"project-id": "some_value", "another_key": "another value"}'
+# Please include single quotes around the input_arguments value.
+```
+
 ### Running Tests Remotely
 
 In order to run a test remotely you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
@@ -174,6 +183,7 @@ atomic-operator run -- --help
 |test_guids|list|None|One or more Atomic test GUIDs.|
 |select_tests|bool|False|Select one or more atomic tests to run when a techniques are specified.|
 |atomics_path|str|os.getcwd()|The path of Atomic tests.|
+|input_arguments|dict|{}|A dictionary of input arguments to pass to the test.|
 |check_prereqs|bool|False|Whether or not to check for prereq dependencies (prereq_comand).|
 |get_prereqs|bool|False|Whether or not you want to retrieve prerequisites.|
 |cleanup|bool|False|Whether or not you want to run cleanup command(s).|
@@ -193,8 +203,6 @@ atomic-operator run -- --help
 |ssh_port|int|22|SSH port for authentication of remote connections.|
 |ssh_timeout|int|5|SSH timeout for authentication of remote connections.|
 |**kwargs|dict|None|If additional flags are passed into the run command then we will attempt to match them with defined inputs within Atomic tests and replace their value with the provided value.|
-
-
 
 
 You should see a similar output to the following:
@@ -225,6 +233,9 @@ FLAGS
     --atomics_path=ATOMICS_PATH
         Default: '/U...
         The path of Atomic tests. Defaults to os.getcwd().
+    --input_arguments={}
+        Default: {}
+        A dictionary of input arguments to pass to the test.
     --check_prereqs=CHECK_PREREQS
         Default: False
         Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
