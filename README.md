@@ -152,7 +152,8 @@ Will prompt the user with a selection list of tests associated with that techniq
 The following will allow you to provide custom input arguments for tests. You do this providing a dictionary of keys and values as a dictionary to the `input_arguments` parameter on the run method.
 
 ```bash
-atomic-operator run --techniques T1564.001 --input_arguments {"project-id": "some_value", "another_key": "another value"}
+atomic-operator run --techniques T1564.001 --input_arguments '{"project-id": "some_value", "another_key": "another value"}'
+# Please include single quotes around the input_arguments value.
 ```
 
 ### Running Tests Remotely
