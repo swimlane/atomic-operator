@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "atomic-operator"
-version = "1.0.0"
+version = "0.9.0"
 description = "A python package to execute security tests on remote and local hosts"
 authors = ["MSAdministrator <MSAdministrator@users.noreply.github.com>"]
 maintainers = ["MSAdministrator <MSAdministrator@users.noreply.github.com>"]
