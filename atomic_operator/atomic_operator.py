@@ -104,6 +104,9 @@ class AtomicOperator(Base):
                 self.__logger.info(f"The test {test.name} ({test.auto_generated_guid}) is a manual test. Skipping.")
                 continue
             self._set_input_arguments(test, **kwargs)
+            config_args = self.__config_parser.get_inputs(test.auto_generated_guid)
+            if config_args:
+                self._set_input_arguments(test, **config_args)
             if test.auto_generated_guid not in self.__test_responses:
                 self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
@@ -257,12 +260,12 @@ class AtomicOperator(Base):
         else: self.__logger.info(f"No results found for keyword '{keyword}'.")
 
     def run(self, techniques: list=['all'], test_guids: list=[], select_tests=False,
-                  atomics_path=os.getcwd(), check_prereqs=False, get_prereqs=False, 
-                  cleanup=False, copy_source_files=True,command_timeout=20, debug=False, 
-                  prompt_for_input_args=False, return_atomics=False, config_file=None, 
+                  atomics_path=os.getcwd(), input_arguments: dict = {}, check_prereqs=False, 
+                  get_prereqs=False, cleanup=False, copy_source_files=True,command_timeout=20, 
+                  debug=False, prompt_for_input_args=False, return_atomics=False, config_file=None, 
                   config_file_only=False, hosts=[], username=None, password=None, 
                   ssh_key_path=None, private_key_string=None, verify_ssl=False, 
-                  ssh_port=22, ssh_timeout=5, *args, **kwargs) -> None:
+                  ssh_port=22, ssh_timeout=5, **kwargs) -> None:
         """The main method in which we run Atomic Red Team tests.
 
         Args:
@@ -270,6 +273,7 @@ class AtomicOperator(Base):
             test_guids (list, optional): One or more Atomic test GUIDs. Defaults to None.
             select_tests (bool, optional): Select one or more tests from provided techniques. Defaults to False.
             atomics_path (str, optional): The path of Atomic tests. Defaults to os.getcwd().
+            input_arguments (dict, optional): A dictionary of input arguments to pass to the test. Defaults to {}.
             check_prereqs (bool, optional): Whether or not to check for prereq dependencies (prereq_comand). Defaults to False.
             get_prereqs (bool, optional): Whether or not you want to retrieve prerequisites. Defaults to False.
             cleanup (bool, optional): Whether or not you want to run cleanup command(s). Defaults to False.
@@ -321,7 +325,7 @@ class AtomicOperator(Base):
             command_timeout       = command_timeout,
             debug                 = debug,
             prompt_for_input_args = prompt_for_input_args,
-            kwargs                = kwargs,
+            kwargs                = input_arguments,
             copy_source_files     = copy_source_files
         )
         # taking inputs from both config_file and passed in values via command
@@ -345,8 +349,8 @@ class AtomicOperator(Base):
         for item in self.__run_list:
             if return_atomics:
                 __return_atomics.append(item)
-            elif kwargs.get('kwargs'):
-                self.__run_technique(item, **kwargs.get('kwargs'))
+            elif input_arguments:
+                self.__run_technique(item, **input_arguments)
             else:
                 self.__run_technique(item)
         if return_atomics and __return_atomics:
