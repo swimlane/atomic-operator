@@ -24,13 +24,13 @@ jobs:
           poetry run pip install --upgrade pip
           poetry install
       - name: Run black
-        run: poetry run black ./pyattck --line-length 120
+        run: poetry run black ./atomic_operator --line-length 120
       - name: Run isort
-        run: poetry run isort ./pyattck --check-only --profile "black"
+        run: poetry run isort ./atomic_operator --check-only --profile "black"
       # - name: Run flake8
       #   run: poetry run flake8 ./pyattck
       - name: Run bandit
-        run: poetry run bandit ./pyattck
+        run: poetry run bandit ./atomic_operator
       # - name: Run saftey
       #   run: poetry run safety check --ignore=47794
   test:
