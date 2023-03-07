@@ -1,7 +1,19 @@
-[![Testing atomic-operator on Ubuntu](https://github.com/swimlane/atomic-operator/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/swimlane/atomic-operator/actions/workflows/ubuntu.yml) ![](./images/ubuntu_support.svg)
-[![Testing atomic-operator on Windows](https://github.com/swimlane/atomic-operator/actions/workflows/windows.yml/badge.svg)](https://github.com/swimlane/atomic-operator/actions/workflows/windows.yml) ![](./images/windows_support.svg)
-[![Testing atomic-operator on macOS](https://github.com/swimlane/atomic-operator/actions/workflows/macos.yml/badge.svg)](https://github.com/swimlane/atomic-operator/actions/workflows/macos.yml) ![](./images/macos_support.svg)
-![](./images/coverage.svg)
+[![PyPI](https://img.shields.io/pypi/v/atomic-operator.svg)][pypi status]
+[![Status](https://img.shields.io/pypi/status/atomic-operator.svg)][pypi status]
+[![Python Version](https://img.shields.io/pypi/pyversions/atomic-operator)][pypi status]
+[![License](https://img.shields.io/pypi/l/atomic-operator)][license]
+
+[![Read the documentation at https://atomic-operator.com/](https://img.shields.io/readthedocs/czds/latest.svg?label=Read%20the%20Docs)][read the docs]
+[![Code Quality & Tests](https://github.com/Swimlane/atomic-operator/actions/workflows/quality.yml/badge.svg)](https://github.com/Swimlane/atomic-operator/actions/workflows/quality.yml)
+
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+
+[pypi status]: https://pypi.org/project/atomic-operator/
+[read the docs]: https://atomic-operator.com
+[tests]: https://github.com/Swimlane/atomic-operator/actions?workflow=Quality
+[codecov]: https://app.codecov.io/gh/Swimlane/atomic-operator
+[pre-commit]: https://github.com/pre-commit/pre-commit
+[black]: https://github.com/psf/black
 
 # atomic-operator
 
