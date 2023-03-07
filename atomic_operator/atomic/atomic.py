@@ -1,8 +1,10 @@
 import os
 import typing
-from .atomictest import AtomicTest
-from ..models import Host
+
 import attr
+
+from ..models import Host
+from .atomictest import AtomicTest
 
 
 @attr.s
@@ -11,11 +13,11 @@ class Atomic:
     will contain a list of one or more AtomicTest objects.
     """
 
-    attack_technique                      = attr.ib()
-    display_name                          = attr.ib()
-    path                                  = attr.ib()
+    attack_technique = attr.ib()
+    display_name = attr.ib()
+    path = attr.ib()
     atomic_tests: typing.List[AtomicTest] = attr.ib()
-    hosts: typing.List[Host]              = attr.ib(default=None)
+    hosts: typing.List[Host] = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         if self.atomic_tests:

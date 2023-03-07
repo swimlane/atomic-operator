@@ -1,10 +1,9 @@
 import os
+
 from ..base import Base
 
 
 class Copier(Base):
-
-
     def __init__(self, windows_client=None, ssh_client=None, elevation_required=False):
         self.windows_client = windows_client
         self.ssh_client = ssh_client
@@ -17,32 +16,32 @@ class Copier(Base):
         for argument in input_arguments:
             argument.source = self._path_replacement(argument.default, Base.CONFIG.atomics_path)
             if self.ssh_client:
-                argument.destination = self._path_replacement(argument.default, '/tmp')
+                argument.destination = self._path_replacement(argument.default, "/tmp")
             elif self.windows_client:
-                argument.destination = self._path_replacement(argument.default, 'c:\\temp')
+                argument.destination = self._path_replacement(argument.default, "c:\\temp")
 
     def __copy_file_to_windows(self, source, desintation):
         try:
             command = f"New-Item -Path {os.path.dirname(desintation)} -ItemType Directory"
             if self.elevation_required:
-                command = f'Start-Process PowerShell -Verb RunAs; {command}'
+                command = f"Start-Process PowerShell -Verb RunAs; {command}"
             output, streams, had_errors = self.windows_client.execute_ps(command)
             response = self.windows_client.copy(source, desintation)
         except:
-            self.__logger.warning(f'Unable to execute copy of supporting file {source}')
-            self.__logger.warning(f'Output: {output}/nStreams: {streams}/nHad Errors: {had_errors}')
+            self.__logger.warning(f"Unable to execute copy of supporting file {source}")
+            self.__logger.warning(f"Output: {output}/nStreams: {streams}/nHad Errors: {had_errors}")
 
     def __copy_file_to_nix(self, source, destination):
-        file = destination.rsplit('/', 1)
+        file = destination.rsplit("/", 1)
         try:
             command = "sh -c '" + f'file="{destination}"' + ' && mkdir -p "${file%/*}" && cat > "${file}"' + "'"
             if self.elevation_required:
-                command = f'sudo {command}'
+                command = f"sudo {command}"
             ssh_stdin, ssh_stdout, ssh_stderr = self.ssh_client.exec_command(command)
-            ssh_stdin.write(open(f'{source}', 'r').read())
+            ssh_stdin.write(open(f"{source}", "r").read())
         except:
-            self.__logger.warning(f'Unable to execute copy of supporting file {file[-1]}')
-            self.__logger.warning(f'STDIN: {ssh_stdin}/nSTDOUT: {ssh_stdout}/nSTDERR: {ssh_stderr}')
+            self.__logger.warning(f"Unable to execute copy of supporting file {file[-1]}")
+            self.__logger.warning(f"STDIN: {ssh_stdin}/nSTDOUT: {ssh_stdout}/nSTDERR: {ssh_stderr}")
 
     def copy_file(self, source, destination):
         if self.ssh_client:
@@ -55,15 +54,15 @@ class Copier(Base):
         for dirpath, dirnames, files in os.walk(source):
             if files:
                 for file in files:
-                    if file.endswith('.yaml') or file.endswith('.md'):
+                    if file.endswith(".yaml") or file.endswith(".md"):
                         continue
                     path_list = [destination]
-                    for item in file.split(source)[-1].split('/'):
+                    for item in file.split(source)[-1].split("/"):
                         if item:
                             path_list.append(item)
                     destination_path = self.join_path_regardless_of_separators(*path_list)
-                    full_path = self.join_path_regardless_of_separators(*[dirpath, file])# f"{dirpath}/{file}"
-                    
+                    full_path = self.join_path_regardless_of_separators(*[dirpath, file])  # f"{dirpath}/{file}"
+
                     if self.ssh_client:
                         self.__copy_file_to_nix(full_path, destination_path)
                     elif self.windows_client:
@@ -83,20 +82,14 @@ class Copier(Base):
                         else:
                             self.copy_file(argument.source, argument.destination)
                             argument.value = self._replace_command_string(
-                                argument.default, 
-                                path='/tmp',
-                                input_arguments=input_arguments
+                                argument.default, path="/tmp", input_arguments=input_arguments
                             )
                     else:
                         argument.value = self._replace_command_string(
-                            argument.default, 
-                            path='/tmp',
-                            input_arguments=input_arguments
+                            argument.default, path="/tmp", input_arguments=input_arguments
                         )
                 else:
                     argument.value = self._replace_command_string(
-                        argument.default, 
-                        path='/tmp',
-                        input_arguments=input_arguments
+                        argument.default, path="/tmp", input_arguments=input_arguments
                     )
         return True

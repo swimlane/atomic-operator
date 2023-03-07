@@ -1,48 +1,34 @@
-import os
 import inspect
+import os
+import platform
 import sys
 import zipfile
 from io import BytesIO
 from typing import AnyStr
-import platform
+
 import requests
 from pick import pick
+
 from .utils.logger import LoggingBase
 
 
 class Base(metaclass=LoggingBase):
-
     CONFIG = None
-    ATOMIC_RED_TEAM_REPO = 'https://github.com/redcanaryco/atomic-red-team/zipball/master/'
+    ATOMIC_RED_TEAM_REPO = "https://github.com/redcanaryco/atomic-red-team/zipball/master/"
     SUPPORTED_PLATFORMS = ["windows", "linux", "macos", "aws"]
     command_map = {
-        'command_prompt': {
-            'windows': 'C:\\Windows\\System32\\cmd.exe',
-            'linux': '/bin/sh',
-            'macos': '/bin/sh',
-            'default': '/bin/sh'
+        "command_prompt": {
+            "windows": "C:\\Windows\\System32\\cmd.exe",
+            "linux": "/bin/sh",
+            "macos": "/bin/sh",
+            "default": "/bin/sh",
         },
-        'powershell': {
-            'windows': 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
-        },
-        'sh': {
-            'linux': '/bin/sh',
-            'macos': '/bin/sh'
-        },
-        'bash': {
-            'linux': '/bin/bash',
-            'macos': '/bin/bash'
-        }
+        "powershell": {"windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"},
+        "sh": {"linux": "/bin/sh", "macos": "/bin/sh"},
+        "bash": {"linux": "/bin/bash", "macos": "/bin/bash"},
     }
-    VARIABLE_REPLACEMENTS = {
-        'powershell': {
-            '%temp%': "$env:TEMP"
-        }
-    }
-    _replacement_strings = [
-        '#{{{0}}}',
-        '${{{0}}}'
-    ]
+    VARIABLE_REPLACEMENTS = {"powershell": {"%temp%": "$env:TEMP"}}
+    _replacement_strings = ["#{{{0}}}", "${{{0}}}"]
 
     def download_atomic_red_team_repo(self, save_path, **kwargs) -> str:
         """Downloads the Atomic Red Team repository from github
@@ -85,15 +71,18 @@ class Base(metaclass=LoggingBase):
         return os.path.abspath(os.path.expanduser(os.path.expandvars(value)))
 
     def prompt_user_for_input(self, title, input_object):
-        """Prompts user for input values based on the provided values.
-        """
-        print(f"""
+        """Prompts user for input values based on the provided values."""
+        print(
+            f"""
 Inputs for {title}:
     Input Name: {input_object.name}
     Default:     {input_object.default}
     Description: {input_object.description}
-""")
-        print(f"Please provide a value for {input_object.name} (If blank, default is used):",)
+"""
+        )
+        print(
+            f"Please provide a value for {input_object.name} (If blank, default is used):",
+        )
         value = sys.stdin.readline()
         if bool(value):
             return value
@@ -102,23 +91,23 @@ Inputs for {title}:
     def parse_input_lists(self, value):
         value_list = None
         if not isinstance(value, list):
-            value_list = set([t.strip() for t in value.split(',')])
+            value_list = set([t.strip() for t in value.split(",")])
         else:
             value_list = set(value)
         return list(value_list)
 
     def _path_replacement(self, string, path):
         try:
-            string = string.replace('$PathToAtomicsFolder', path)
+            string = string.replace("$PathToAtomicsFolder", path)
         except:
             pass
         try:
-            string = string.replace('PathToAtomicsFolder', path)
+            string = string.replace("PathToAtomicsFolder", path)
         except:
             pass
         return string
 
-    def _replace_command_string(self, command: str, path:str, input_arguments: list=[], executor=None):
+    def _replace_command_string(self, command: str, path: str, input_arguments: list = [], executor=None):
         if command:
             command = self._path_replacement(command, path)
             if input_arguments:
@@ -130,7 +119,7 @@ Inputs for {title}:
                             # catching errors since some inputs are actually integers but defined as strings
                             pass
                     if executor and self.VARIABLE_REPLACEMENTS.get(executor):
-                        for key,val in self.VARIABLE_REPLACEMENTS[executor].items():
+                        for key, val in self.VARIABLE_REPLACEMENTS[executor].items():
                             try:
                                 command = command.replace(key, val)
                             except:
@@ -138,7 +127,7 @@ Inputs for {title}:
         return self._path_replacement(command, path)
 
     def _check_if_aws(self, test):
-        if 'iaas:aws' in test.supported_platforms and self.get_local_system_platform() in ['macos', 'linux']:
+        if "iaas:aws" in test.supported_platforms and self.get_local_system_platform() in ["macos", "linux"]:
             return True
         return False
 
@@ -146,7 +135,9 @@ Inputs for {title}:
         if self._check_if_aws(test):
             return True
         if test.supported_platforms and self.get_local_system_platform() not in test.supported_platforms:
-            self.__logger.info(f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping...")
+            self.__logger.info(
+                f"You provided a test ({test.auto_generated_guid}) '{test.name}' which is not supported on this platform. Skipping..."
+            )
             return False
         return True
 
@@ -154,18 +145,18 @@ Inputs for {title}:
         if test.input_arguments:
             if kwargs:
                 for input in test.input_arguments:
-                    for key,val in kwargs.items():
+                    for key, val in kwargs.items():
                         if input.name == key:
                             input.value = val
             if Base.CONFIG.prompt_for_input_args:
                 for input in test.input_arguments:
                     input.value = self.prompt_user_for_input(test.name, input)
-            for key,val in self.VARIABLE_REPLACEMENTS.items():
+            for key, val in self.VARIABLE_REPLACEMENTS.items():
                 if test.executor.name == key:
-                    for k,v in val.items():
+                    for k, v in val.items():
                         for input in test.input_arguments:
                             if k in input.default:
-                                input.value = input.default.replace(k,v)
+                                input.value = input.default.replace(k, v)
             for input in test.input_arguments:
                 if input.value == None:
                     input.value = input.default
@@ -177,10 +168,10 @@ Inputs for {title}:
             test_list.append(test)
         if test_list:
             options = pick(
-                test_list, 
-                title=f"Select Test(s) for Technique {technique.attack_technique} ({technique.display_name})", 
-                multiselect=True, 
-                options_map_func=self.format_pick_options
+                test_list,
+                title=f"Select Test(s) for Technique {technique.attack_technique} ({technique.display_name})",
+                multiselect=True,
+                options_map_func=self.format_pick_options,
             )
         return [i[0] for i in options] if options else []
 

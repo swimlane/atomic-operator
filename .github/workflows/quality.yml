@@ -1,0 +1,62 @@
+name: Quality Check
+on: [push]
+
+jobs:
+  code-quality:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8"]
+        poetry-version: ["1.3.2"]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run image
+        uses: abatilo/actions-poetry@v2.2.0
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dependencies
+        run: |
+          poetry run pip install --upgrade pip
+          poetry install
+      - name: Run black
+        run: poetry run black ./atomic_operator --line-length 120
+      - name: Run isort
+        run: poetry run isort ./atomic_operator --check-only --profile "black"
+      # - name: Run flake8
+      #   run: poetry run flake8 ./pyattck
+      # - name: Run bandit
+      #   run: poetry run bandit ./atomic_operator
+      # - name: Run saftey
+      #   run: poetry run safety check --ignore=47794
+  test:
+    needs: code-quality
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+        poetry-version: ["1.3.2"]
+        os: [ubuntu-latest,macos-latest,windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run image
+        uses: abatilo/actions-poetry@v2.2.0
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dependencies
+        run: |
+          poetry run pip install --upgrade pip
+          poetry run pip install --upgrade setuptools
+          poetry install
+      - name: Run tests
+        run: poetry run coverage run -m pytest && poetry run coverage report
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1

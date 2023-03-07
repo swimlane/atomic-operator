@@ -4,19 +4,18 @@ from pathlib import Path, PurePath
 import yaml
 
 from ..base import Base
-from .atomic import Atomic
 from ..utils.exceptions import AtomicsFolderNotFound
+from .atomic import Atomic
 
 
 class Loader(Base):
-
     __techniques = {}
-    TECHNIQUE_DIRECTORY_PATTERN = 'T*'
+    TECHNIQUE_DIRECTORY_PATTERN = "T*"
 
     def __get_file_name(self, path) -> str:
-        return path.name.rstrip('.yaml')
+        return path.name.rstrip(".yaml")
 
-    def find_atomics(self, atomics_path, pattern='**/T*/T*.yaml') -> list:
+    def find_atomics(self, atomics_path, pattern="**/T*/T*.yaml") -> list:
         """Attempts to find the atomics folder within the provided atomics_path
 
         Args:
@@ -42,14 +41,14 @@ class Loader(Base):
             dict: Returns the loaded yaml file in a dictionary format
         """
         try:
-            with open(self.get_abs_path(path_to_dir), 'r', encoding="utf-8") as f:
+            with open(self.get_abs_path(path_to_dir), "r", encoding="utf-8") as f:
                 return yaml.safe_load(f.read())
         except:
             self.__logger.warning(f"Unable to load technique in '{path_to_dir}'")
-            
+
         try:
             # windows does not like get_abs_path so casting to string
-            with open(str(path_to_dir), 'r', encoding="utf-8") as f:
+            with open(str(path_to_dir), "r", encoding="utf-8") as f:
                 return yaml.safe_load(f.read())
         except OSError as oe:
             self.__logger.warning(f"Unable to load technique in '{path_to_dir}': {oe}")
@@ -69,17 +68,17 @@ class Loader(Base):
         if not os.path.exists(self.get_abs_path(atomics_path)):
             atomics_path = self.find_atomics(self.get_abs_path(__file__))
             if not atomics_path:
-                raise AtomicsFolderNotFound('Unable to find any atomics folder')
+                raise AtomicsFolderNotFound("Unable to find any atomics folder")
         else:
             atomics_path = self.find_atomics(atomics_path)
             if not atomics_path:
-                raise AtomicsFolderNotFound('Unable to find any atomics folder')
+                raise AtomicsFolderNotFound("Unable to find any atomics folder")
 
         for atomic_entry in atomics_path:
             technique = self.__get_file_name(atomic_entry)
             if not self.__techniques.get(technique):
                 loaded_technique = self.load_technique(str(atomic_entry))
                 if loaded_technique:
-                    loaded_technique.update({'path': os.path.dirname(str(atomic_entry))})
+                    loaded_technique.update({"path": os.path.dirname(str(atomic_entry))})
                     self.__techniques[technique] = Atomic(**loaded_technique)
         return self.__techniques
