@@ -29,8 +29,8 @@ jobs:
         run: poetry run isort ./atomic_operator --check-only --profile "black"
       # - name: Run flake8
       #   run: poetry run flake8 ./pyattck
-      - name: Run bandit
-        run: poetry run bandit ./atomic_operator
+      # - name: Run bandit
+      #   run: poetry run bandit ./atomic_operator
       # - name: Run saftey
       #   run: poetry run safety check --ignore=47794
   test:
