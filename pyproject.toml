@@ -23,6 +23,7 @@ atomic-operator-runner = "^0.2.1"
 fire = "^0.5.0"
 pick = "^2.2.0"
 rich = "^13.3.1"
+attrs = "^23.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
