@@ -12,13 +12,11 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v3
+      - uses: google-github-actions/release-please-action@v4
         id: release
         with:
           release-type: python
           package-name: atomic-operator
-          bump-minor-pre-major: true
-          bump-patch-for-minor-pre-major: true
           include-v-in-tag: false
       # The logic below handles the PyPi distribution:
       - uses: actions/checkout@v3
@@ -31,9 +29,9 @@ jobs:
           python-version: "3.10"
         if: ${{ steps.release.outputs.release_created }}
       - name: Set up poetry
-        uses: abatilo/actions-poetry@v2.2.0
+        uses: abatilo/actions-poetry@v2.3.0
         with:
-          poetry-version: 1.3.2
+          poetry-version: 1.7.1
         if: ${{ steps.release.outputs.release_created }}
       - name: Publish
         run: |
