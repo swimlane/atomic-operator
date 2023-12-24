@@ -1,5 +1,6 @@
 import inspect
 import os
+from pprint import pprint
 from typing import AnyStr
 
 from atomic_operator_runner import Runner
@@ -294,6 +295,7 @@ class AtomicOperator(Base):
         verify_ssl=False,
         ssh_port=22,
         ssh_timeout=5,
+        pretty=False,
         **kwargs,
     ) -> None:
         """The main method in which we run Atomic Red Team tests.
@@ -322,6 +324,7 @@ class AtomicOperator(Base):
             verify_ssl (bool, optional): Whether or not to verify ssl when connecting over RDP (windows). Defaults to False.
             ssh_port (int, optional): SSH port for authentication of remote connections. Defaults to 22.
             ssh_timeout (int, optional): SSH timeout for authentication of remote connections. Defaults to 5.
+            pretty (bool, optional): Whether or not to output results in a pretty format. Defaults to False.
             kwargs (dict, optional): If provided, keys matching inputs for a test will be replaced. Default is None.
 
         Raises:
@@ -389,5 +392,5 @@ class AtomicOperator(Base):
             else:
                 self.__run_technique(item)
         if return_atomics and __return_atomics:
-            return __return_atomics
-        return self.__test_responses
+            return pprint(__return_atomics) if pretty else __return_atomics
+        return pprint(self.__test_responses) if pretty else self.__test_responses
