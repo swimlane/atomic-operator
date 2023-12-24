@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.9.1](https://github.com/swimlane/atomic-operator/compare/0.9.0...v0.9.1) (2023-12-24)
+
+
+### Bug Fixes
+
+* Adding pretty run output ([67bf78a](https://github.com/swimlane/atomic-operator/commit/67bf78a8a9d075783a953142549051cbd13cce29))
+* Removing old python setup files and updating ci ([efdad4e](https://github.com/swimlane/atomic-operator/commit/efdad4ef787b7f0178b7f310c2c1cbb53d3bd444))
+* removing setting in ci ([892079c](https://github.com/swimlane/atomic-operator/commit/892079c3b651f3567f2597cd2213ebc0514a80c2))
+* Updated docs ([22c76da](https://github.com/swimlane/atomic-operator/commit/22c76dab4075aebe8708f7dd57af689144bb1ffe))
+* Updatind dependencies ([256633b](https://github.com/swimlane/atomic-operator/commit/256633baba2a52ed8141562020aaf72162c16f06))
+
 ## [0.9.0](https://github.com/swimlane/atomic-operator/compare/0.8.5...0.9.0) (2023-03-06)
 
 
