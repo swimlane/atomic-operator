@@ -73,11 +73,11 @@ You can install **atomic-operator** on OS X, Linux, or Windows. You can also ins
 The following libraries are required and installed by atomic-operator:
 
 ```
-pyyaml==5.4.1
-fire==0.4.0
-requests==2.26.0
-attrs==21.2.0
-pick==1.2.0
+atomic-operator-runner==^0.2.1
+rich==^13.3.1
+fire==^0.5.0
+attrs==^23.1.0
+pick==^2.2.0
 ```
 
 ### macOS, Linux and Windows:
@@ -86,29 +86,12 @@ pick==1.2.0
 pip install atomic-operator
 ```
 
-### macOS using M1 processor
-
-```bash
-git clone https://github.com/swimlane/atomic-operator.git
-cd atomic-operator
-
-# Satisfy ModuleNotFoundError: No module named 'setuptools_rust'
-brew install rust
-pip3 install --upgrade pip
-pip3 install setuptools_rust
-
-# Back to our regularly scheduled programming . . .  
-pip install -r requirements.txt
-python setup.py install
-```
-
 ### Installing from source
 
 ```bash
 git clone https://github.com/swimlane/atomic-operator.git
 cd atomic-operator
-pip install -r requirements.txt
-python setup.py install
+pip install .
 ```
 
 ## Usage example (command line)
@@ -173,8 +156,8 @@ atomic-operator run --techniques T1564.001 --input_arguments '{"project-id": "so
 In order to run a test remotely you must provide some additional properties (and options if desired). The main method to run tests is named `run`.
 
 ```bash
-# This will run ALL tests compatiable with your local operating system
-atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624" --hosts "10.32.1.0" --username "my_username" --password "my_password"
+# This will run ALL tests compatiable with your specified operating system
+atomic-operator run --atomics-path "/tmp/some_directory/redcanaryco-atomic-red-team-3700624" --hosts "{'10.32.1.0':'linux'}" --username "my_username" --password "my_password"
 ```
 
 > When running commands remotely against Windows hosts you may need to configure PSRemoting. See details here: [Windows Remoting](docs/windows-remote.md)
@@ -206,7 +189,7 @@ atomic-operator run -- --help
 |return_atomics|bool|False|Whether or not you want to return atomics instead of running them.|
 |config_file|str|None|A path to a conifg_file which is used to automate atomic-operator in environments.|
 |config_file_only|bool|False|Whether or not you want to run tests based on the provided config_file only.|
-|hosts|list|None|A list of one or more remote hosts to run a test on.|
+|hosts|dict|None|A list of one or more remote hosts to run a test on.|
 |username|str|None|Username for authentication of remote connections.|
 |password|str|None|Password for authentication of remote connections.|
 |ssh_key_path|str|None|Path to a SSH Key for authentication of remote connections.|
@@ -280,8 +263,8 @@ FLAGS
         Default: False
         Whether or not you want to run tests based on the provided config_file only. Defaults to False.
     --hosts=HOSTS
-        Default: []
-        A list of one or more remote hosts to run a test on. Defaults to [].
+        Default: {}
+        A dictionary of one or more remote hosts and their respective platform to run a test on. Defaults to [].
     --username=USERNAME
         Type: Optional[]
         Default: None

@@ -110,58 +110,62 @@ class AtomicOperator(Base):
             config_args = self.__config_parser.get_inputs(test.auto_generated_guid)
             if config_args:
                 self._set_input_arguments(test, **config_args)
-            if test.auto_generated_guid not in self.__test_responses:
-                self.__test_responses[test.auto_generated_guid] = {}
             if technique.hosts:
                 for host in technique.hosts:
-                    self.__logger.info(
-                        f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}"
-                    )
-                    self.__logger.debug(f"Description: {test.description}")
-                    supported_platforms = [x for x in test.supported_platforms if x in self.SUPPORTED_PLATFORMS]
-                    for platform in supported_platforms:
-                        self.__logger.debug(f"Running test on {platform} platform.")
-                        # TODO: Need to add support for copy of files to remote hosts.
-                        path = technique.path
-                        if platform == "windows":
-                            path = "c:\\temp"
-                        elif platform == "linux" or platform == "macos" or platform == "aws":
-                            path = "/tmp"
-                        else:
-                            raise PlatformNotSupportedError(
-                                provided_platform=platform, supported_platforms=self.SUPPORTED_PLATFORMS
-                            )
-                        self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
-                        new_command = self._replace_command_string(
-                            command=test.executor.command,
-                            path=path,
-                            input_arguments=test.input_arguments,
-                            executor=test.executor.name,
+                    if host.platform in self.SUPPORTED_PLATFORMS:
+                        if host.platform in test.supported_platforms:
+                            if test.auto_generated_guid not in self.__test_responses:
+                                self.__test_responses[test.auto_generated_guid] = {}
+                                self.__logger.info(
+                                    f"Running {test.name} test ({test.auto_generated_guid}) for technique {technique.attack_technique}"
+                                )
+                                self.__logger.debug(f"Description: {test.description}")
+                                self.__logger.debug(f"Running test on {host.platform} platform.")
+                                # TODO: Need to add support for copy of files to remote hosts.
+                                path = technique.path
+                                if host.platform == "windows":
+                                    path = "c:\\temp"
+                                elif host.platform == "linux" or host.platform == "macos" or host.platform == "aws":
+                                    path = "/tmp"
+                                else:
+                                    raise PlatformNotSupportedError(
+                                        provided_platform=host.platform, supported_platforms=self.SUPPORTED_PLATFORMS
+                                    )
+                                self.__logger.debug(f"The original execution command is '{test.executor.command}'.")
+                                new_command = self._replace_command_string(
+                                    command=test.executor.command,
+                                    path=path,
+                                    input_arguments=test.input_arguments,
+                                    executor=test.executor.name,
+                                )
+                                self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
+                                runner = Runner(
+                                    platform=host.platform,
+                                    hostname=host.hostname,
+                                    username=host.username,
+                                    password=host.password,
+                                    verify_ssl=host.verify_ssl,
+                                    ssh_key_path=host.ssh_key_path,
+                                    private_key_string=host.private_key_string,
+                                    ssh_port=host.port,
+                                    ssh_timeout=host.timeout,
+                                )
+                                for response in runner.run(
+                                    command=new_command,
+                                    executor=test.executor.name,
+                                    elevation_required=test.executor.elevation_required,
+                                ):
+                                    self.__test_responses[test.auto_generated_guid].update(
+                                        {
+                                            "technique_id": technique.attack_technique,
+                                            "technique_name": technique.display_name,
+                                            "response": response,
+                                        }
+                                    )
+                    else:
+                        raise PlatformNotSupportedError(
+                            provided_platform=host.platform, supported_platforms=self.SUPPORTED_PLATFORMS
                         )
-                        self.__logger.debug(f"Newly formatted execution command is '{new_command}'.")
-                        runner = Runner(
-                            platform=platform,
-                            hostname=host.hostname,
-                            username=host.username,
-                            password=host.password,
-                            verify_ssl=host.verify_ssl,
-                            ssh_key_path=host.ssh_key_path,
-                            private_key_string=host.private_key_string,
-                            ssh_port=host.port,
-                            ssh_timeout=host.timeout,
-                        )
-                        for response in runner.run(
-                            command=new_command,
-                            executor=test.executor.name,
-                            elevation_required=test.executor.elevation_required,
-                        ):
-                            self.__test_responses[test.auto_generated_guid].update(
-                                {
-                                    "technique_id": technique.attack_technique,
-                                    "technique_name": technique.display_name,
-                                    "response": response,
-                                }
-                            )
             else:
                 if self._check_platform(test, show_output=True):
                     self.__logger.info(
@@ -287,7 +291,7 @@ class AtomicOperator(Base):
         return_atomics=False,
         config_file=None,
         config_file_only=False,
-        hosts=[],
+        hosts: dict = {},
         username=None,
         password=None,
         ssh_key_path=None,
@@ -316,7 +320,7 @@ class AtomicOperator(Base):
             return_atomics (bool, optional): Whether or not you want to return atomics instead of running them. Defaults to False.
             config_file (str, optional): A path to a conifg_file which is used to automate atomic-operator in environments. Default to None.
             config_file_only (bool, optional): Whether or not you want to run tests based on the provided config_file only. Defaults to False.
-            hosts (list, optional): A list of one or more remote hosts to run a test on. Defaults to [].
+            hosts (dict, optional): A dictionary of one or more remote hosts with their platform type to run a test on. Defaults to {}.
             username (str, optional): Username for authentication of remote connections. Defaults to None.
             password (str, optional): Password for authentication of remote connections. Defaults to None.
             ssh_key_path (str, optional): Path to a SSH Key for authentication of remote connections. Defaults to None.
@@ -372,7 +376,7 @@ class AtomicOperator(Base):
             config_file=config_file,
             techniques=None if config_file_only else self.parse_input_lists(techniques),
             test_guids=None if config_file_only else self.parse_input_lists(test_guids),
-            host_list=None if config_file_only else self.parse_input_lists(hosts),
+            host_dict=None if config_file_only else hosts,
             username=username,
             password=password,
             ssh_key_path=ssh_key_path,

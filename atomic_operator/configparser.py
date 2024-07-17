@@ -12,7 +12,7 @@ class ConfigParser(Base):
         config_file=None,
         techniques=None,
         test_guids=None,
-        host_list=None,
+        host_dict=None,
         username=None,
         password=None,
         ssh_key_path=None,
@@ -80,11 +80,12 @@ class ConfigParser(Base):
         self.test_guids = test_guids
         self.select_tests = select_tests
         self.__host_list = []
-        if host_list:
-            for host in self.parse_input_lists(host_list):
+        if host_dict:
+            for host in host_dict:
                 self.__host_list.append(
                     self.__create_remote_host_object(
                         hostname=host,
+                        platform=host_dict[host],
                         username=username,
                         password=password,
                         ssh_key_path=ssh_key_path,
@@ -129,6 +130,7 @@ class ConfigParser(Base):
     def __create_remote_host_object(
         self,
         hostname=None,
+        platform=None,
         username=None,
         password=None,
         ssh_key_path=None,
@@ -139,6 +141,7 @@ class ConfigParser(Base):
     ):
         return Host(
             hostname=hostname,
+            platform=platform,
             username=username,
             password=password,
             ssh_key_path=ssh_key_path,

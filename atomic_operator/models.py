@@ -42,6 +42,7 @@ class Config:
 @attr.s
 class Host:
     hostname = attr.ib(type=str)
+    platform = attr.ib(type=str)
     username = attr.ib(default=None, type=str)
     password = attr.ib(default=None, type=str)
     verify_ssl = attr.ib(default=False, type=bool)
